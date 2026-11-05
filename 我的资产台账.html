@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>我的资产台账</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>¥</text></svg>">
+<style>
+:root{
+  --bg:#f3f4f8; --card:#fff; --border:#eceef2; --text:#1f2329; --text2:#8a9099;
+  --up:#d4380d; --up-bg:#fff1f0; --down:#389e0d; --down-bg:#f6ffed;
+  --primary:#4f46e5; --primary-light:#eef2ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+.layout{max-width:900px;margin:0 auto;padding:12px}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 0 16px}
+header h1{font-size:18px;font-weight:600}
+nav{display:flex;gap:4px;background:var(--card);border-radius:12px;padding:4px;margin-bottom:14px;overflow-x:auto}
+nav button{flex:1;min-width:64px;border:none;background:transparent;padding:9px 6px;border-radius:8px;
+  cursor:pointer;font-size:13px;color:var(--text2);white-space:nowrap}
+nav button.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+
+/* 概览顶部 */
+.total-card{background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:16px;padding:20px;color:#fff;margin-bottom:12px}
+.total-card .label{font-size:13px;opacity:.85;text-align:center}
+.total-card .value{font-size:32px;font-weight:700;text-align:center;margin:6px 0;font-variant-numeric:tabular-nums}
+.total-card .sub{text-align:center;font-size:12px;opacity:.8}
+.today-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:480px){.today-row{grid-template-columns:1fr 1fr}}
+.stat-box{background:var(--card);border-radius:12px;padding:14px;text-align:center}
+.stat-box .label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.stat-box .value{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-box .value.up{color:var(--up)}
+.stat-box .value.down{color:var(--down)}
+
+.panel{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px}
+.panel h2{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+
+/* 日历 */
+.month-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month-cal .dow{font-size:11px;color:var(--text2);text-align:center;padding:4px 0}
+.month-cal .day{aspect-ratio:.85;border-radius:10px;font-size:11px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:#fafbfc;font-variant-numeric:tabular-nums;min-height:56px}
+.month-cal .day.empty{background:transparent}
+.month-cal .day.pos{background:var(--up-bg)}
+.month-cal .day.neg{background:var(--down-bg)}
+.month-cal .day.today{background:var(--up);color:#fff}
+.month-cal .day.today .d-pnl{color:#fff}
+.month-cal .day .d-num{color:var(--text2);font-size:10px;margin-bottom:2px}
+.month-cal .day.today .d-num{color:rgba(255,255,255,.8)}
+.month-cal .day .d-pnl{font-weight:600;font-size:11px;color:var(--up)}
+.month-cal .day.neg .d-pnl{color:var(--down)}
+.month-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px;font-weight:600}
+button.nav-btn{background:var(--primary-light);color:var(--primary);border:none;width:32px;height:32px;
+  border-radius:10px;cursor:pointer;font-size:16px}
+
+/* 机构分组 */
+.group-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:8px}
+.group-header .g-name{font-weight:600;font-size:14px}
+.group-header .g-name .badge{display:inline-block;background:var(--primary-light);color:var(--primary);
+  font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;font-weight:500}
+.group-header .g-pnl{font-size:13px;font-weight:600;color:var(--up)}
+.group-header .g-pnl .wanshou{color:var(--text2);font-weight:400;font-size:12px;margin-left:8px}
+
+/* 产品行 */
+.product{padding:12px 0;border-bottom:1px solid var(--border)}
+.product:last-child{border-bottom:none}
+.product .p-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.product .p-name{font-size:15px;font-weight:600}
+.product .p-code{font-size:12px;color:var(--text2);margin-top:2px}
+.product .p-day{text-align:right}
+.product .p-day .p-date{color:var(--primary);font-weight:600;font-size:13px}
+.product .p-day .p-ws{font-size:12px;color:var(--text2)}
+.product .p-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.product .p-stats .s-label{font-size:11px;color:var(--text2);margin-bottom:2px}
+.product .p-stats .s-val{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.product .p-stats .s-val.up{color:var(--up)}
+.product .p-stats .s-val.bold{color:var(--text)}
+@media(max-width:480px){.product .p-stats{grid-template-columns:repeat(4,1fr);gap:2px}
+  .product .p-stats .s-val{font-size:12px}}
+
+/* 详情展开 */
+.p-detail{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:12px}
+.p-detail table{width:100%}
+.p-detail th,.p-detail td{padding:4px;font-size:12px}
+
+/* 表单 */
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.form-row label{font-size:12px;color:var(--text2);min-width:60px}
+.form-row input,.form-row select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;min-width:100px}
+button.btn{background:var(--primary);color:#fff;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px}
+button.btn.ghost{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+button.btn.sm{padding:4px 10px;font-size:12px}
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data th{color:var(--text2);font-weight:500;font-size:12px}
+textarea{width:100%;min-height:80px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;
+  padding:8px 16px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+.empty-tip{color:var(--text2);text-align:center;padding:20px;font-size:13px}
+.quick-row{display:grid;grid-template-columns:200px 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.quick-label{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qnav-input,.qpnl-input,.qmv-input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:100%}
+@media(max-width:600px){
+  .quick-row{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .quick-label{grid-column:1/-1}
+  .quick-row .qnav-input,.quick-row .qpnl-input,.quick-row .qmv-input{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div id="loginPage" style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="width:320px;padding:30px;background:var(--card);border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.1)">
+    <h2 style="margin:0 0 20px;font-size:18px;text-align:center">我的资产台账</h2>
+    <input type="email" id="loginEmail" placeholder="邮箱" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;box-sizing:border-box">
+    <input type="password" id="loginPassword" placeholder="密码" style="width:100%;padding:10px;margin-bottom:15px;border:1px solid var(--border);border-radius:8px;font-size:14px;box-sizing:border-box">
+    <button type="button" class="btn" style="width:100%" onclick="doLogin()">登录</button>
+    <div id="loginError" style="color:red;font-size:12px;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+<div class="layout" style="display:none" id="mainApp">
+  <header>
+    <h1>我的资产台账</h1>
+    <span style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:12px;color:var(--text2)" id="todayLabel"></span>
+      <button class="btn ghost" style="padding:4px 10px;font-size:12px" onclick="logout()">退出</button>
+    </span>
+  </header>
+  <nav id="nav">
+    <button data-view="overview" class="active">概览</button>
+    <button data-view="holdings">持仓</button>
+    <button data-view="trades">交易</button>
+    <button data-view="quick">快捷录入</button>
+    <button data-view="data">数据</button>
+  </nav>
+
+  <!-- 概览 -->
+  <div id="view-overview">
+    <div class="total-card">
+      <div class="label">持仓总金额（元）</div>
+      <div class="value" id="oTotal">-</div>
+      <div class="sub" id="oTotalSub"></div>
+    </div>
+    <div class="today-row">
+      <div class="stat-box"><div class="label">今日收益</div><div class="value up" id="oTodayPnl">-</div><div class="label" id="oTodayDate"></div></div>
+      <div class="stat-box"><div class="label">今日万份收益</div><div class="value" id="oTodayWs">-</div><div class="label">每万元当日收益</div></div>
+    </div>
+    <div class="today-row">
+      <div class="stat-box"><div class="label">本月收益</div><div class="value up" id="oMonthPnl">-</div></div>
+      <div class="stat-box"><div class="label">本月年化</div><div class="value up" id="oMonthAnnual">-</div></div>
+    </div>
+    <div class="today-row">
+      <div class="stat-box"><div class="label">上月收益</div><div class="value up" id="oLastMonthPnl">-</div></div>
+      <div class="stat-box"><div class="label">上月年化</div><div class="value up" id="oLastMonthAnnual">-</div></div>
+    </div>
+    <div class="panel">
+      <h2>
+        <span>收益统计</span>
+        <span style="display:flex;gap:4px">
+          <button class="btn sm" id="btnViewMonth" onclick="setPnlView('month')">月收益</button>
+          <button class="btn sm ghost" id="btnViewYear" onclick="setPnlView('year')">年收益</button>
+        </span>
+      </h2>
+      <div id="pnlSummary" style="font-size:13px;color:var(--text2);margin-bottom:8px"></div>
+      <canvas id="pnlChart" style="width:100%;height:220px"></canvas>
+    </div>
+    <div class="panel">
+      <h2>收益日历</h2>
+      <div class="month-cal" id="calGrid"></div>
+      <div id="dayDetail" style="display:none;margin-top:10px"></div>
+      <div class="month-nav">
+        <button class="nav-btn" onclick="shiftMonth(-1)">‹</button>
+        <span id="calTitle"></span>
+        <button class="nav-btn" onclick="shiftMonth(1)">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 持仓 -->
+  <div id="view-holdings" class="hidden">
+    <div class="panel" id="holdingPanel"></div>
+    <div class="panel">
+      <h2>已清仓记录 <button class="btn sm" onclick="openHoldingForm()">+ 新增</button></h2>
+      <div id="closedList"></div>
+    </div>
+  </div>
+
+  <!-- 交易 -->
+  <div id="view-trades" class="hidden">
+    <div class="panel">
+      <h2>记一笔交易</h2>
+      <div class="form-row"><label>产品</label>
+        <select id="tHolding" onchange="onProductChange()"></select>
+      </div>
+      <div id="newProductFields" class="hidden">
+        <div class="form-row"><label>新产品名</label><input type="text" id="tNewName" placeholder="如：稳富纯债30天A"></div>
+        <div class="form-row"><label>渠道</label>
+          <input list="agencyList" id="tAgency" placeholder="选择或输入新渠道">
+          <datalist id="agencyList">
+            <option value="中国银行"></option><option value="网商银行"></option><option value="微众银行"></option>
+            <option value="浦发银行"></option><option value="招商银行"></option><option value="工商银行"></option>
+            <option value="建设银行"></option><option value="交通银行"></option>
+          </datalist>
+        </div>
+        <div class="form-row"><label>产品代码</label><input type="text" id="tSalesCode" placeholder="如 CYQWFCZ30DA"></div>
+      </div>
+      <div class="form-row">
+        <label>类型</label><select id="tType"><option value="buy">买入</option><option value="redeem">卖出/赎回</option></select>
+      </div>
+      <div class="form-row">
+        <label>净值日期</label><input type="date" id="tDate">
+        <label>金额</label><input type="number" id="tAmount" step="0.01" onblur="autoCalcShares()">
+      </div>
+      <div class="form-row">
+        <label>确认净值</label><input type="number" id="tNav" step="0.000001" placeholder="自动算" onblur="autoCalcShares()">
+        <label>份额</label><input type="number" id="tShares" step="0.0001" placeholder="自动算" onblur="autoCalcShares()">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="submitTradeBtn" onclick="addTrade()">保存交易</button>
+        <button class="btn ghost" onclick="document.getElementById('tNav').value='';document.getElementById('tShares').value=''">清空</button>
+      </div>
+    </div>
+    <div class="panel"><h2>全部交易</h2>
+      <div style="overflow-x:auto"><table class="data" id="tradeTable">
+        <thead><tr><th>日期</th><th>产品</th><th>类型</th><th>金额</th><th>净值</th><th>份额</th><th></th></tr></thead>
+        <tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- 快捷录入 -->
+  <div id="view-quick" class="hidden">
+    <div class="panel">
+      <h2>每日净值快捷录入</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px">选日期 → 选产品 → 填净值 → 保存。每天花 1 分钟即可。</p>
+      <div class="form-row">
+        <label>日期</label><input type="date" id="qDate">
+      </div>
+      <div id="quickRows"></div>
+      <button class="btn" onclick="saveQuick()">全部保存</button>
+    </div>
+    <div class="panel">
+      <h2>批量导入（CSV）</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:8px">格式：产品ID,日期,净值，每行一条</p>
+      <textarea id="navInput" placeholder="5814,2026-10-28,1.0128"></textarea>
+      <div style="margin-top:8px"><button class="btn ghost" onclick="importNav()">导入</button></div>
+    </div>
+  </div>
+
+  <!-- 数据 -->
+  <div id="view-data" class="hidden">
+    <div class="panel">
+      <h2>备份与恢复</h2>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">数据保存在浏览器本地（localStorage），请定期导出。</p>
+      <button class="btn" onclick="exportData()">导出 JSON 备份</button>
+      <button class="btn" onclick="forceRefresh()" style="margin-left:8px">强制从云端刷新</button>
+      <button class="btn ghost" onclick="logout()" style="margin-left:8px">退出登录</button>
+      <div style="margin-top:12px">
+        <input type="file" id="importFile" accept=".json" style="font-size:13px">
+      </div>
+    </div>
+    <div class="panel">
+      <h2>净值管理</h2>
+      <div class="form-row">
+        <label>产品</label>
+        <select id="navDelPid"></select>
+        <label>从</label><input type="date" id="navFrom">
+        <label>到</label><input type="date" id="navTo">
+        <button class="btn sm" onclick="queryNav()">查询</button>
+      </div>
+      <div id="navResult" style="margin-top:10px;font-size:13px;max-height:300px;overflow-y:auto"></div>
+    </div>
+    <div class="panel">
+      <h2>产品管理（含已清仓、空记录）</h2>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">这里列出全部产品，包括持仓为 0 和没有任何交易的空记录。删除会同时从云端删除。</div>
+      <div id="productAdminList" style="max-height:380px;overflow-y:auto"></div>
+    </div>
+    <div class="panel">
+      <h2>产品登记编码（中国理财网查询用）</h2>
+      <div id="regCodeList" style="margin-top:10px;font-size:13px"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const INITIAL = {"holdings": [{"id": "holding_080_1793168281632", "productId": "080", "productName": "灵动慧利24号", "agencyName": "微众银行", "salesCode": "5811225162", "managerOrg": "交银理财", "category": "活期+Plus", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-10-28", "amount": 35510.84, "nav": null, "shares": null, "status": "pending", "confirmDate": null}]}, {"id": "holding_8042_1789710991999", "productId": "8042", "productName": "稳富纯债30天A", "agencyName": "中国银行", "salesCode": "CYQWFCZ30DA", "managerOrg": "中银理财", "category": "", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-09-18", "amount": 363, "nav": 1.002432, "shares": 362.119326, "status": "confirmed", "confirmDate": "2026-09-18"}]}, {"id": "holding_7107_1786500852247", "productId": "7107", "productName": "匠心灵动14天9期", "agencyName": "网商银行", "salesCode": "NYJXLD1409N", "managerOrg": "农银理财", "category": "", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-08-12", "amount": 202104.61, "nav": 1.009469, "shares": 200208.832564, "status": "confirmed", "confirmDate": "2026-08-12"}]}, {"id": "holding_5829_1786354432314", "productId": "5829", "productName": "招睿添利7天16号", "agencyName": "中国银行", "salesCode": "132096D", "managerOrg": "招银理财", "category": "招睿添利", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-08-12", "amount": 60000, "nav": 1.0074, "shares": 59559.261465, "status": "confirmed", "confirmDate": "2026-08-12"}, {"type": "redeem", "date": "2026-09-09", "amount": 60053.6, "nav": 1.0083, "shares": 59559.261465, "status": "confirmed", "confirmDate": "2026-09-09"}]}, {"id": "holding_099_1786352614552", "productId": "099", "productName": "诚享24号B", "agencyName": "微众银行", "salesCode": "YJ01250672B", "managerOrg": "北银理财", "category": "活期+Plus", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-06-29", "amount": 50000, "nav": 1.010479, "shares": 49481.483534, "status": "confirmed", "confirmDate": "2026-06-29"}, {"type": "redeem", "date": "2026-09-08", "amount": 30000, "nav": 1.013854, "shares": 29590.059318, "status": "confirmed", "confirmDate": "2026-09-08"}, {"type": "redeem", "date": "2026-10-27", "amount": 20210.3, "nav": 1.016031, "shares": 19891.424216, "status": "confirmed", "confirmDate": "2026-10-27"}]}, {"id": "holding_043_1786352456043", "productId": "043", "productName": "周周鑫11号", "agencyName": "微众银行", "salesCode": "2501240121", "managerOrg": "浦银理财", "category": "活期+Plus", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-05-14", "amount": 35066.57, "nav": 1.0394, "shares": 33737.319607, "status": "confirmed", "confirmDate": "2026-05-14"}, {"type": "redeem", "date": "2026-09-08", "amount": 10000, "nav": 1.04487, "shares": 9570.568587, "status": "confirmed", "confirmDate": "2026-09-08"}, {"type": "redeem", "date": "2026-10-27", "amount": 25299.69, "nav": 1.04688, "shares": 24166.75102, "status": "confirmed", "confirmDate": "2026-10-27"}]}, {"id": "holding_561_1786351139563", "productId": "561", "productName": "双周鑫99号A", "agencyName": "网商银行", "salesCode": "2501260048", "managerOrg": "浦银理财", "category": "稳利宝", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-05-25", "amount": 200119.1, "nav": 1.0043, "shares": 199262.272229, "status": "confirmed", "confirmDate": "2026-05-25"}, {"type": "buy", "date": "2026-05-14", "amount": 200628, "nav": 1.0036, "shares": 199908.330012, "status": "confirmed", "confirmDate": "2026-05-14"}, {"type": "redeem", "date": "2026-08-12", "amount": 200019.85, "nav": 1.0074, "shares": 198550.57574, "status": "confirmed", "confirmDate": "2026-08-12"}, {"type": "redeem", "date": "2026-08-12", "amount": 202104.61, "nav": 1.0074, "shares": 200620.026501, "status": "confirmed", "confirmDate": "2026-08-12"}]}, {"id": "holding_813_1786350923180", "productId": "813", "productName": "稳富精选日开3号A", "agencyName": "中国银行", "salesCode": "WFXYJXRK3A", "managerOrg": "中银理财", "category": "稳富信用精选", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-06-03", "amount": 24000, "nav": 1.031519, "shares": 23266.6582, "status": "confirmed", "confirmDate": "2026-06-03"}, {"type": "buy", "date": "2026-05-22", "amount": 140000, "nav": 1.030702, "shares": 135829.754866, "status": "confirmed", "confirmDate": "2026-05-22"}, {"type": "redeem", "date": "2026-10-22", "amount": 165058.86, "nav": 1.037477, "shares": 159096.413066, "status": "confirmed", "confirmDate": "2026-10-22"}]}, {"id": "holding_818_1786350723920", "productId": "818", "productName": "稳富增强全球配置14天3A", "agencyName": "中国银行", "salesCode": "CYQWFZQQQPZ14D3A", "managerOrg": "中银理财", "category": "稳富全球配置", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-01-28", "amount": 150000, "nav": 1.008214, "shares": 148777.938017, "status": "confirmed", "confirmDate": "2026-01-28"}]}, {"id": "holding_6604_1786350552864", "productId": "6604", "productName": "稳富中短久期7天2A", "agencyName": "中国银行", "salesCode": "CYQWFZDJQ7D2A", "managerOrg": "中银理财", "category": "稳富中短久期", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-10-26", "amount": 160000, "nav": 1.01597, "shares": 157484.965107, "status": "confirmed", "confirmDate": "2026-10-26"}, {"type": "buy", "date": "2026-10-13", "amount": 50000, "nav": 1.014861, "shares": 49267.830767, "status": "confirmed", "confirmDate": "2026-10-13"}, {"type": "buy", "date": "2026-05-29", "amount": 50000, "nav": 1, "shares": 50000, "status": "confirmed", "confirmDate": "2026-05-29"}]}, {"id": "holding_5814_1786350423418", "productId": "5814", "productName": "惠农鸿运7天3号", "agencyName": "中国银行", "salesCode": "2501BR003A", "managerOrg": "中邮理财", "category": "惠农鸿运", "confirmTime": "T+1", "note": "", "trades": [{"type": "buy", "date": "2026-07-21", "amount": 140000, "nav": 1.0054, "shares": 139248.060473, "status": "confirmed", "confirmDate": "2026-07-21"}]}], "dailyNav": {"5814": {"2026-07-21": 1.0054, "2026-07-22": 1.0055, "2026-07-23": 1.0055, "2026-07-24": 1.0056, "2026-07-27": 1.0057, "2026-07-28": 1.0057, "2026-07-29": 1.0057, "2026-07-30": 1.0058, "2026-07-31": 1.0058, "2026-10-08": 1.0101, "2026-10-09": 1.0107, "2026-10-10": 1.0108, "2026-10-12": 1.0108, "2026-10-13": 1.0109, "2026-10-14": 1.011, "2026-10-15": 1.011, "2026-10-16": 1.0111, "2026-10-19": 1.0113, "2026-10-20": 1.0115, "2026-10-21": 1.0116, "2026-10-22": 1.0116, "2026-10-23": 1.0117, "2026-10-26": 1.0118, "2026-10-27": 1.0127, "2026-08-03": 1.0059, "2026-08-04": 1.006, "2026-08-05": 1.006, "2026-08-06": 1.006, "2026-08-07": 1.0061, "2026-08-10": 1.0062, "2026-08-11": 1.0062, "2026-08-12": 1.0063, "2026-08-13": 1.0063, "2026-08-14": 1.0063, "2026-08-17": 1.0064, "2026-08-18": 1.0065, "2026-08-19": 1.0065, "2026-08-20": 1.0066, "2026-08-21": 1.0066, "2026-08-24": 1.0067, "2026-08-25": 1.0068, "2026-08-26": 1.0068, "2026-08-27": 1.0068, "2026-08-28": 1.0069, "2026-08-31": 1.007, "2026-09-01": 1.007, "2026-09-02": 1.0071, "2026-09-03": 1.0071, "2026-09-04": 1.0072, "2026-09-07": 1.0073, "2026-09-08": 1.0073, "2026-09-09": 1.0074, "2026-09-10": 1.0074, "2026-09-11": 1.0074, "2026-09-14": 1.0075, "2026-09-15": 1.0076, "2026-09-16": 1.0076, "2026-09-17": 1.0077, "2026-09-18": 1.0077, "2026-09-20": 1.0078, "2026-09-21": 1.0078, "2026-09-22": 1.0078, "2026-09-23": 1.0081, "2026-09-24": 1.0089, "2026-09-28": 1.009, "2026-09-29": 1.0097, "2026-09-30": 1.0098}, "6604": {"2026-10-08": 1.014023, "2026-10-09": 1.014427, "2026-10-12": 1.014861, "2026-10-13": 1.014927, "2026-10-14": 1.015115, "2026-10-15": 1.015205, "2026-10-16": 1.01531, "2026-10-19": 1.015411, "2026-10-20": 1.015807, "2026-10-21": 1.015839, "2026-10-22": 1.015897, "2026-10-23": 1.01597, "2026-10-26": 1.016127, "2026-10-27": 1.016284, "2026-08-03": 1.003544, "2026-08-04": 1.003628, "2026-08-05": 1.003631, "2026-08-06": 1.0037, "2026-08-07": 1.004005, "2026-08-10": 1.004504, "2026-08-11": 1.004523, "2026-08-12": 1.004519, "2026-08-13": 1.00492, "2026-08-14": 1.004848, "2026-08-17": 1.005015, "2026-08-18": 1.006436, "2026-08-19": 1.006357, "2026-08-20": 1.006365, "2026-08-21": 1.006368, "2026-08-24": 1.006988, "2026-08-25": 1.006915, "2026-08-26": 1.006924, "2026-08-27": 1.007448, "2026-08-28": 1.008637, "2026-08-31": 1.008791, "2026-09-01": 1.00918, "2026-09-02": 1.009186, "2026-09-03": 1.009612, "2026-09-04": 1.009693, "2026-09-07": 1.00995, "2026-09-08": 1.011313, "2026-09-09": 1.011368, "2026-09-10": 1.011366, "2026-09-11": 1.011356, "2026-09-14": 1.011433, "2026-09-15": 1.011567, "2026-09-16": 1.011722, "2026-09-17": 1.01268, "2026-09-18": 1.012989, "2026-09-21": 1.013288, "2026-09-22": 1.013315, "2026-09-23": 1.013342, "2026-09-24": 1.01337, "2026-09-28": 1.013478, "2026-09-29": 1.013505, "2026-09-30": 1.013532, "2026-07-15": 1.002391, "2026-07-16": 1.002396, "2026-07-17": 1.002526, "2026-07-20": 1.002597, "2026-07-21": 1.002674, "2026-07-22": 1.002853, "2026-07-23": 1.002995, "2026-07-24": 1.003195, "2026-07-27": 1.00327, "2026-07-28": 1.003205, "2026-07-29": 1.003224, "2026-07-30": 1.003321, "2026-07-31": 1.00336}, "818": {"2026-10-08": 1.027133, "2026-10-09": 1.027136, "2026-10-12": 1.027398, "2026-10-13": 1.027415, "2026-10-14": 1.027477, "2026-10-15": 1.027383, "2026-10-16": 1.02743, "2026-10-19": 1.0274, "2026-10-20": 1.027857, "2026-10-21": 1.027742, "2026-10-22": 1.027623, "2026-10-23": 1.027726, "2026-10-26": 1.027868, "2026-10-27": 1.027877, "2026-09-01": 1.025832, "2026-09-02": 1.025814, "2026-09-03": 1.025853, "2026-09-04": 1.025938, "2026-09-07": 1.02606, "2026-09-08": 1.026184, "2026-09-09": 1.026231, "2026-09-10": 1.026228, "2026-09-11": 1.026258, "2026-09-14": 1.026284, "2026-09-15": 1.026323, "2026-09-16": 1.026389, "2026-09-17": 1.026512, "2026-09-18": 1.026599, "2026-09-21": 1.026811, "2026-09-22": 1.026914, "2026-09-23": 1.026918, "2026-09-24": 1.026998, "2026-09-28": 1.02699, "2026-09-29": 1.02698, "2026-09-30": 1.026989, "2026-08-03": 1.024579, "2026-08-04": 1.024578, "2026-08-05": 1.024725, "2026-08-06": 1.024836, "2026-08-07": 1.024997, "2026-08-10": 1.02522, "2026-08-11": 1.025183, "2026-08-12": 1.025202, "2026-08-13": 1.025333, "2026-08-14": 1.025357, "2026-08-17": 1.025467, "2026-08-18": 1.025734, "2026-08-19": 1.025695, "2026-08-20": 1.025506, "2026-08-21": 1.025504, "2026-08-24": 1.025652, "2026-08-25": 1.025625, "2026-08-26": 1.025628, "2026-08-27": 1.025591, "2026-08-28": 1.025637, "2026-08-31": 1.025713, "2026-07-15": 1.024114, "2026-07-16": 1.024093, "2026-07-17": 1.024031, "2026-07-20": 1.023872, "2026-07-21": 1.023918, "2026-07-22": 1.024328, "2026-07-23": 1.024335, "2026-07-24": 1.024428, "2026-07-27": 1.0244, "2026-07-28": 1.024446, "2026-07-29": 1.024268, "2026-07-30": 1.024444, "2026-07-31": 1.02443}, "043": {"2026-08-03": 1.04346, "2026-08-04": 1.04352, "2026-08-05": 1.04354, "2026-08-06": 1.0436, "2026-08-07": 1.04365, "2026-08-10": 1.04378, "2026-08-11": 1.0438, "2026-08-12": 1.04385, "2026-08-13": 1.04387, "2026-08-14": 1.04392, "2026-08-17": 1.04402, "2026-08-18": 1.04407, "2026-08-19": 1.04411, "2026-08-20": 1.04414, "2026-08-21": 1.04418, "2026-08-24": 1.04429, "2026-08-25": 1.04433, "2026-08-26": 1.04436, "2026-08-27": 1.04441, "2026-08-28": 1.04446, "2026-08-31": 1.04458, "2026-07-15": 1.04252, "2026-07-16": 1.04254, "2026-07-17": 1.0426, "2026-07-20": 1.04276, "2026-07-21": 1.0428, "2026-07-22": 1.04286, "2026-07-23": 1.04292, "2026-07-24": 1.04296, "2026-07-27": 1.04311, "2026-07-28": 1.04315, "2026-07-29": 1.04321, "2026-07-30": 1.04327, "2026-07-31": 1.04331, "2026-10-08": 1.04618, "2026-10-09": 1.04623, "2026-10-12": 1.04633, "2026-10-13": 1.04637, "2026-10-14": 1.04642, "2026-10-15": 1.04644, "2026-10-16": 1.04649, "2026-10-19": 1.04661, "2026-10-20": 1.04664, "2026-10-21": 1.04668, "2026-10-22": 1.04671, "2026-10-23": 1.04675, "2026-10-26": 1.04688, "2026-09-01": 1.04463, "2026-09-02": 1.04466, "2026-09-03": 1.04471, "2026-09-04": 1.04474, "2026-09-07": 1.04487, "2026-09-08": 1.04492, "2026-09-09": 1.04496, "2026-09-10": 1.045, "2026-09-11": 1.04504, "2026-09-14": 1.04517, "2026-09-15": 1.04522, "2026-09-16": 1.04527, "2026-09-17": 1.0453, "2026-09-18": 1.04535, "2026-09-21": 1.04549, "2026-09-22": 1.04552, "2026-09-23": 1.04557, "2026-09-24": 1.04561, "2026-09-28": 1.04579, "2026-09-29": 1.04582, "2026-09-30": 1.04587}, "5829": {"2026-09-01": 1.0081, "2026-09-02": 1.0081, "2026-09-03": 1.0081, "2026-09-04": 1.0081, "2026-09-07": 1.0082, "2026-09-08": 1.0083, "2026-08-12": 1.0075, "2026-08-13": 1.0075, "2026-08-14": 1.0075, "2026-08-17": 1.0076, "2026-08-18": 1.0076, "2026-08-19": 1.0077, "2026-08-20": 1.0077, "2026-08-21": 1.0077, "2026-08-24": 1.0078, "2026-08-25": 1.0078, "2026-08-26": 1.0079, "2026-08-27": 1.0079, "2026-08-28": 1.0079, "2026-08-31": 1.008}, "7107": {"2026-08-12": 1.009506, "2026-08-13": 1.009741, "2026-08-14": 1.009763, "2026-08-17": 1.010032, "2026-08-18": 1.010541, "2026-08-19": 1.010414, "2026-08-20": 1.010418, "2026-08-21": 1.010408, "2026-08-24": 1.010533, "2026-08-25": 1.010532, "2026-08-26": 1.010491, "2026-08-27": 1.010416, "2026-08-28": 1.010941, "2026-08-31": 1.011056, "2026-10-08": 1.013397, "2026-10-09": 1.013564, "2026-10-10": 1.013608, "2026-10-12": 1.013944, "2026-10-13": 1.014053, "2026-10-14": 1.014334, "2026-10-15": 1.014381, "2026-10-16": 1.014646, "2026-10-19": 1.014799, "2026-10-20": 1.015189, "2026-10-21": 1.015286, "2026-10-22": 1.015298, "2026-10-23": 1.01537, "2026-10-26": 1.015544, "2026-10-27": 1.015763, "2026-09-01": 1.011205, "2026-09-02": 1.011172, "2026-09-03": 1.011315, "2026-09-04": 1.01137, "2026-09-07": 1.011493, "2026-09-08": 1.0115, "2026-09-09": 1.011536, "2026-09-10": 1.011564, "2026-09-11": 1.011493, "2026-09-14": 1.011548, "2026-09-15": 1.011645, "2026-09-16": 1.011769, "2026-09-17": 1.012359, "2026-09-18": 1.012505, "2026-09-20": 1.012552, "2026-09-21": 1.012737, "2026-09-22": 1.012901, "2026-09-23": 1.012958, "2026-09-24": 1.013187, "2026-09-28": 1.013217, "2026-09-29": 1.01356, "2026-09-30": 1.013342}, "813": {"2026-08-03": 1.033025, "2026-08-04": 1.033079, "2026-08-05": 1.033129, "2026-08-06": 1.033197, "2026-08-07": 1.033298, "2026-08-10": 1.033544, "2026-08-11": 1.033548, "2026-08-12": 1.033594, "2026-08-13": 1.033776, "2026-08-14": 1.033836, "2026-08-17": 1.033952, "2026-08-18": 1.034306, "2026-08-19": 1.034218, "2026-08-20": 1.034155, "2026-08-21": 1.034124, "2026-08-24": 1.034363, "2026-08-25": 1.034335, "2026-08-26": 1.034315, "2026-08-27": 1.034279, "2026-08-28": 1.034312, "2026-08-31": 1.034508, "2026-07-15": 1.032364, "2026-07-16": 1.032365, "2026-07-17": 1.032403, "2026-07-20": 1.032426, "2026-07-21": 1.032463, "2026-07-22": 1.032633, "2026-07-23": 1.032667, "2026-07-24": 1.032749, "2026-07-27": 1.032801, "2026-07-28": 1.032812, "2026-07-29": 1.032706, "2026-07-30": 1.032848, "2026-07-31": 1.03291, "2026-09-01": 1.034781, "2026-09-02": 1.034735, "2026-09-03": 1.034928, "2026-09-04": 1.034989, "2026-09-07": 1.035127, "2026-09-08": 1.03515, "2026-09-09": 1.035208, "2026-09-10": 1.035219, "2026-09-11": 1.0352, "2026-09-14": 1.035281, "2026-09-15": 1.035351, "2026-09-16": 1.035435, "2026-09-17": 1.035493, "2026-09-18": 1.035638, "2026-09-21": 1.035826, "2026-09-22": 1.035993, "2026-09-23": 1.03605, "2026-09-24": 1.036273, "2026-09-28": 1.036268, "2026-09-29": 1.036367, "2026-09-30": 1.036336, "2026-10-08": 1.036565, "2026-10-09": 1.036651, "2026-10-12": 1.036854, "2026-10-13": 1.036911, "2026-10-14": 1.036974, "2026-10-15": 1.037086, "2026-10-16": 1.03714, "2026-10-19": 1.037225, "2026-10-20": 1.03742, "2026-10-21": 1.037477}, "099": {"2026-07-15": 1.011362, "2026-07-16": 1.011408, "2026-07-17": 1.011454, "2026-07-20": 1.011589, "2026-07-21": 1.011641, "2026-07-22": 1.011697, "2026-07-23": 1.011745, "2026-07-24": 1.011795, "2026-07-27": 1.011933, "2026-07-28": 1.011987, "2026-07-29": 1.012034, "2026-07-30": 1.012083, "2026-07-31": 1.012128, "2026-08-03": 1.012262, "2026-08-04": 1.012319, "2026-08-05": 1.01237, "2026-08-06": 1.012418, "2026-08-07": 1.012473, "2026-08-10": 1.012597, "2026-08-11": 1.012656, "2026-08-12": 1.012704, "2026-08-13": 1.012749, "2026-08-14": 1.012792, "2026-08-17": 1.012916, "2026-08-18": 1.012971, "2026-08-19": 1.013016, "2026-08-20": 1.013059, "2026-08-21": 1.013102, "2026-08-24": 1.013219, "2026-08-25": 1.013273, "2026-08-26": 1.013312, "2026-08-27": 1.013356, "2026-08-28": 1.013401, "2026-08-31": 1.013525, "2026-10-08": 1.015242, "2026-10-09": 1.015322, "2026-10-12": 1.01543, "2026-10-13": 1.015488, "2026-10-14": 1.015526, "2026-10-15": 1.015567, "2026-10-16": 1.015608, "2026-10-19": 1.01572, "2026-10-20": 1.015777, "2026-10-21": 1.015816, "2026-10-22": 1.015863, "2026-10-23": 1.015903, "2026-10-26": 1.016031, "2026-09-01": 1.01358, "2026-09-02": 1.013624, "2026-09-03": 1.013664, "2026-09-04": 1.013731, "2026-09-07": 1.013854, "2026-09-08": 1.013911, "2026-09-09": 1.013954, "2026-09-10": 1.013995, "2026-09-11": 1.014037, "2026-09-14": 1.014156, "2026-09-15": 1.014211, "2026-09-16": 1.014257, "2026-09-17": 1.014313, "2026-09-18": 1.01436, "2026-09-21": 1.014496, "2026-09-22": 1.014557, "2026-09-23": 1.014603, "2026-09-24": 1.014654, "2026-09-28": 1.014823, "2026-09-29": 1.014889, "2026-09-30": 1.014931}, "561": {"2026-08-03": 1.007, "2026-08-04": 1.007, "2026-08-05": 1.0071, "2026-08-06": 1.0071, "2026-08-07": 1.0072, "2026-08-10": 1.0073, "2026-08-11": 1.0074, "2026-07-17": 1.0063, "2026-07-20": 1.0064, "2026-07-21": 1.0064, "2026-07-22": 1.0066, "2026-07-23": 1.0067, "2026-07-24": 1.0068, "2026-07-27": 1.0068, "2026-07-28": 1.0068, "2026-07-29": 1.0068, "2026-07-30": 1.0068, "2026-07-31": 1.0069}, "8042": {"2026-10-08": 1.004651, "2026-10-09": 1.004828, "2026-10-12": 1.00512, "2026-10-13": 1.005214, "2026-10-14": 1.005384, "2026-10-15": 1.005462, "2026-10-16": 1.005549, "2026-10-19": 1.005662, "2026-10-20": 1.005914, "2026-10-21": 1.005941, "2026-10-22": 1.006022, "2026-10-23": 1.006046, "2026-10-26": 1.007787, "2026-10-27": 1.008206, "2026-09-18": 1.002763, "2026-09-21": 1.00311, "2026-09-22": 1.003422, "2026-09-23": 1.003498, "2026-09-24": 1.004058, "2026-09-28": 1.0039, "2026-09-29": 1.004626, "2026-09-30": 1.004419}}, "version": 1, "exportedAt": "2026-10-28"};
+const STORE_KEY = "my_asset_ledger_v2";
+const SUPABASE_URL = "https://ckiaaisliwtzzlbcwpoi.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4jhYkoi90EXh0_kH6pWN_A_K5hKFF4h";
+const SB_HEADERS = {
+  "apikey": SUPABASE_KEY,
+  "Authorization": "Bearer " + SUPABASE_KEY,
+  "Content-Type": "application/json",
+  "Prefer": "return=minimal"
+};
+function fmtLocalDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+let state = loadState();
+// 给老数据补 tradeId
+state.holdings.forEach(h=>h.trades.forEach((t,i)=>{ if(!t.tradeId) t.tradeId = h.id+'_'+i+'_'+t.date; }));
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let pnlView = 'month';
+let sbReady = true;
+let accessToken = localStorage.getItem('sb_token') || '';
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  try{
+    const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: {"apikey": SUPABASE_KEY, "Content-Type": "application/json"},
+      body: JSON.stringify({email, password})
+    });
+    const d = await r.json();
+    if(d.access_token){
+      accessToken = d.access_token;
+      localStorage.setItem('sb_token', accessToken);
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('mainApp').style.display = '';
+      loadFromSupabase();
+    } else {
+      document.getElementById('loginError').textContent = d.error_description || '登录失败';
+    }
+  }catch(e){ document.getElementById('loginError').textContent = '网络错误'; }
+}
+function logout(){
+  localStorage.removeItem('sb_token');
+  location.reload();
+}
+// 自动登录：有token直接进
+if(accessToken){
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('mainApp').style.display = '';
+}
+// 更新headers带token
+const SB_AUTH_HEADERS = () => ({
+  "apikey": SUPABASE_KEY,
+  "Authorization": "Bearer " + accessToken,
+  "Content-Type": "application/json",
+  "Prefer": "return=minimal"
+});
+
+function loadState(){
+  try{ const s = localStorage.getItem(STORE_KEY); if(s) return JSON.parse(s); }catch(e){}
+  return JSON.parse(JSON.stringify(INITIAL));
+}
+function save(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  syncToSupabase();
+}
+// 从Supabase加载数据（云端为唯一真相：完全替换本地，云端为空则本地也清空）
+async function loadFromSupabase(){
+  try {
+    const hRes = await fetch(SUPABASE_URL + "/rest/v1/holdings?select=*", {headers: SB_AUTH_HEADERS()});
+    if(hRes.status === 401){
+      localStorage.removeItem('sb_token');
+      accessToken = '';
+      document.getElementById('loginPage').style.display = '';
+      document.getElementById('mainApp').style.display = 'none';
+      return;
+    }
+    if(!hRes.ok) throw new Error('holdings HTTP '+hRes.status);
+    const hData = await hRes.json();
+    const nRes = await fetch(SUPABASE_URL + "/rest/v1/daily_nav?select=*", {headers: SB_AUTH_HEADERS()});
+    if(nRes.status === 401){
+      localStorage.removeItem('sb_token');
+      accessToken = '';
+      document.getElementById('loginPage').style.display = '';
+      document.getElementById('mainApp').style.display = 'none';
+      return;
+    }
+    if(!nRes.ok) throw new Error('daily_nav HTTP '+nRes.status);
+    const nData = await nRes.json();
+
+    // 两次请求都成功后才动本地数据，避免半途失败把本地清空
+    if(Array.isArray(hData)){
+      state.holdings = hData.map(r => ({
+        id: r.id, productId: r.product_id, productName: r.product_name,
+        agencyName: r.agency_name, salesCode: r.sales_code, regCode: r.reg_code,
+        trades: r.trades || []
+      }));
+    }
+    if(Array.isArray(nData)){
+      const fresh = {};
+      nData.forEach(r => {
+        if(!fresh[r.product_id]) fresh[r.product_id] = {};
+        fresh[r.product_id][r.nav_date] = parseFloat(r.nav);
+      });
+      state.dailyNav = fresh;
+    }
+    sbReady = true;
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    renderAll();
+  } catch(e) { console.warn('Supabase加载失败，用本地数据', e); toast('云端拉取失败，暂用本地数据'); }
+}
+// 同步到Supabase
+function syncToSupabase(){
+  if(!sbReady) return;
+  let pending = 0, done = 0;
+  const checkDone = () => { if(++done === pending){} };
+  const checkFail = () => { if(++done === pending){ toast('同步失败，检查网络'); } };
+  // 同步holdings
+  state.holdings.forEach(h => {
+    pending++;
+    fetch(SUPABASE_URL + "/rest/v1/holdings", {
+      method: "POST", headers: {...SB_AUTH_HEADERS(), "Prefer": "resolution=merge-duplicates"},
+      body: JSON.stringify({
+        id: h.id, product_id: h.productId, product_name: h.productName,
+        agency_name: h.agencyName, sales_code: h.salesCode, reg_code: h.regCode,
+        trades: h.trades
+      })
+    }).then(checkDone).catch(checkFail);
+  });
+  // 同步dailyNav
+  Object.keys(state.dailyNav).forEach(pid => {
+    Object.keys(state.dailyNav[pid]).forEach(date => {
+      const nav = state.dailyNav[pid][date];
+      pending++;
+      fetch(SUPABASE_URL + "/rest/v1/daily_nav", {
+        method: "POST", headers: {...SB_AUTH_HEADERS(), "Prefer": "resolution=merge-duplicates"},
+        body: JSON.stringify({product_id: pid, nav_date: date, nav: nav})
+      }).then(checkDone).catch(checkFail);
+    });
+  });
+}
+// 首次：如果Supabase为空，把本地数据上传
+async function initialUpload(){
+  const r = await fetch(SUPABASE_URL + "/rest/v1/holdings?select=id", {headers: SB_AUTH_HEADERS()});
+  const d = await r.json();
+  if(!d || d.length === 0){
+    state.holdings.forEach(h => {
+      fetch(SUPABASE_URL + "/rest/v1/holdings", {
+        method: "POST", headers: SB_AUTH_HEADERS(),
+        body: JSON.stringify({
+          id: h.id, product_id: h.productId, product_name: h.productName,
+          agency_name: h.agencyName, sales_code: h.salesCode, reg_code: h.regCode,
+          trades: h.trades
+        })
+      });
+    });
+    Object.keys(state.dailyNav).forEach(pid => {
+      Object.keys(state.dailyNav[pid]).forEach(date => {
+        fetch(SUPABASE_URL + "/rest/v1/daily_nav", {
+          method: "POST", headers: SB_AUTH_HEADERS(),
+          body: JSON.stringify({product_id: pid, nav_date: date, nav: state.dailyNav[pid][date]})
+        });
+      });
+    });
+  }
+  sbReady = true;
+}
+loadFromSupabase().then(()=>{ if(!sbReady) initialUpload(); });
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+async function forceRefresh(){
+  toast('正在从云端拉取...');
+  await loadFromSupabase();
+  renderAll();
+  toast('已从云端刷新');
+}
+
+// ===== 数据迁移：添加稳富增强优嘉1月A (5820) =====
+function migrate5820(){
+  let h = state.holdings.find(h=>h.productId==='5820');
+  if(!h){
+    if(!state.dailyNav) state.dailyNav = {};
+    h = {
+      id: 'holding_5820',
+      productId: '5820',
+      productName: '稳富增强优嘉1月A',
+      agencyName: '中国银行',
+      salesCode: 'CYQWFZQYJ1MA',
+      trades: []
+    };
+    state.holdings.push(h);
+  }
+  // 修复已有数据：补 date 字段
+  if(h.trades && h.trades[0] && !h.trades[0].date){
+    h.trades[0].date = h.trades[0].confirmDate || '2026-09-21';
+    h.trades[0].nav = h.trades[0].nav || 1.03961;
+  }
+  if(!h.trades || h.trades.length===0){
+    h.trades = [{
+      tradeId: 'trade_5820_1',
+      type: 'buy', status: 'confirmed',
+      date: '2026-09-21',
+      confirmDate: '2026-09-21',
+      amount: 60000,
+      nav: 1.03961,
+      shares: 57763.623551
+    }];
+  }
+  if(!state.dailyNav['5820']){
+    state.dailyNav['5820'] = {
+    "2026-07-14":1.035414,"2026-07-15":1.035445,"2026-07-16":1.035514,"2026-07-17":1.035536,
+    "2026-07-20":1.035589,"2026-07-21":1.035594,"2026-07-22":1.035671,"2026-07-23":1.035697,
+    "2026-07-24":1.035817,"2026-07-27":1.035895,"2026-07-28":1.035887,"2026-07-29":1.035945,
+    "2026-07-30":1.035928,"2026-07-31":1.035995,"2026-08-03":1.036103,"2026-08-04":1.036109,
+    "2026-08-05":1.036171,"2026-08-06":1.036191,"2026-08-07":1.036274,"2026-08-10":1.036368,
+    "2026-08-11":1.036385,"2026-08-12":1.036556,"2026-08-13":1.036594,"2026-08-14":1.036615,
+    "2026-08-17":1.036703,"2026-08-18":1.036763,"2026-08-19":1.036753,"2026-08-20":1.036775,
+    "2026-08-21":1.036826,"2026-08-24":1.036909,"2026-08-25":1.036934,"2026-08-26":1.037012,
+    "2026-08-27":1.036999,"2026-08-28":1.037027,"2026-08-31":1.037088,"2026-09-01":1.037144,
+    "2026-09-02":1.037164,"2026-09-03":1.037263,"2026-09-04":1.03732,"2026-09-07":1.037422,
+    "2026-09-08":1.037442,"2026-09-09":1.037489,"2026-09-10":1.037498,"2026-09-11":1.037513,
+    "2026-09-14":1.03761,"2026-09-15":1.037673,"2026-09-16":1.037746,"2026-09-17":1.038754,
+    "2026-09-18":1.038716,"2026-09-21":1.03961,"2026-09-22":1.039937,"2026-09-23":1.040127,
+    "2026-09-24":1.040275,"2026-09-28":1.040388,"2026-09-29":1.040566,"2026-09-30":1.040556,
+    "2026-10-08":1.040789,"2026-10-09":1.040902,"2026-10-12":1.041215,"2026-10-13":1.041428,
+    "2026-10-14":1.041711,"2026-10-15":1.042002,"2026-10-16":1.042149,"2026-10-19":1.042273,
+    "2026-10-20":1.042775,"2026-10-21":1.042993,"2026-10-22":1.043135,"2026-10-23":1.043277,
+    "2026-10-26":1.043475,"2026-10-27":1.043543
+    };
+  }
+  save();
+}
+
+// ===== 计算 =====
+function latestNav(pid){
+  const nav = state.dailyNav[pid]||{};
+  const dates = Object.keys(nav).sort();
+  return dates.length ? {date:dates[dates.length-1], nav:nav[dates[dates.length-1]]} : null;
+}
+function navOn(pid, date){
+  const nav = state.dailyNav[pid]||{};
+  const dates = Object.keys(nav).filter(d=>d<=date).sort();
+  return dates.length ? {date:dates[dates.length-1], nav:nav[dates[dates.length-1]]} : null;
+}
+// 移动平均成本法
+function positionAt(h, date){
+  let shares=0, cost=0;
+  const trades = h.trades.filter(t=>t.status==='confirmed'&&t.date<=date).sort((a,b)=>a.date.localeCompare(b.date));
+  for(const t of trades){
+    if(t.type==='buy'){
+      const sh = t.shares||0;
+      if(sh<=0) continue; // 无份额的买入（未确认/无净值）不计入
+      shares+=sh; cost+=t.amount||0;
+    } else {
+      const ss=t.shares||0;
+      if(shares>0) cost -= cost*ss/shares;
+      shares -= ss;
+    }
+  }
+  return {shares:Math.max(0,shares), cost:Math.max(0,cost)};
+}
+// 某产品在某日的当日盈亏（需要该产品有当日净值和前一交易日净值）
+function productDayPnl(h, date){
+  const navMap = state.dailyNav[h.productId]||{};
+  if(!navMap[date]) return 0;
+  const dates = Object.keys(navMap).sort();
+  const idx = dates.indexOf(date);
+  if(idx<=0) return 0;
+  const prev = navMap[dates[idx-1]];
+  const pos = positionAt(h, date);
+  return pos.shares*(navMap[date]-prev);
+}
+// 每日总收益（遍历所有 holdings）
+function dailyTotalPnl(){
+  const map = {};
+  const allDates = new Set();
+  Object.values(state.dailyNav).forEach(nm => Object.keys(nm).forEach(d=>allDates.add(d)));
+  allDates.forEach(date=>{
+    let total = 0;
+    state.holdings.forEach(h=>{ total += productDayPnl(h, date); });
+    if(Math.abs(total)>0.005) map[date] = Math.round(total*100)/100;
+  });
+  return map;
+}
+// 当前持仓（份额>0.01）
+function currentHoldings(){
+  const today = new Date().toISOString().slice(0,10);
+  return state.holdings.map(h=>{
+    const pos = positionAt(h, today);
+    const ln = latestNav(h.productId);
+    let prevNav=null;
+    if(ln){
+      const dates = Object.keys(state.dailyNav[h.productId]||{}).sort();
+      const idx = dates.indexOf(ln.date);
+      if(idx>0) prevNav = state.dailyNav[h.productId][dates[idx-1]];
+    }
+    const amount = pos.shares*(ln?ln.nav:0);
+    const dayPnl = prevNav ? pos.shares*(ln.nav-prevNav) : 0;
+    const holdPnl = amount - pos.cost;
+    // 加权平均持有天数：每笔买入金额 × 该笔持有天数 / 总买入金额
+    let holdDays=0;
+    if(ln && pos.cost>0){
+      let weightedDays=0;
+      h.trades.filter(t=>t.type==='buy'&&t.status==='confirmed').forEach(t=>{
+        const td = t.date||t.confirmDate;
+        if(!td) return;
+        const days = Math.max(1, Math.round((new Date(ln.date)-new Date(td))/86400000));
+        weightedDays += (t.amount||0) * days;
+      });
+      holdDays = weightedDays / pos.cost;
+    }
+    let annual = (pos.cost>0&&holdDays>0) ? holdPnl/pos.cost/holdDays*365*100 : 0;
+    const wanshou = amount>0 ? dayPnl/amount*10000 : 0;
+    return {...h, shares:pos.shares, cost:pos.cost, amount, dayPnl, holdPnl,
+      latestNav:ln?ln.nav:null, latestDate:ln?ln.date:null, prevNav, holdDays, annual, wanshou};
+  }).filter(h=>h.shares>0.01);
+}
+
+// ===== 渲染 =====
+function showView(name){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  ['overview','holdings','trades','quick','data'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden', v!==name));
+  if(name==='overview') renderOverview();
+  if(name==='holdings') renderHoldings();
+  if(name==='trades') renderTrades();
+  if(name==='quick') renderQuick();
+  if(name==='data'){ initNavDel(); renderRegCodeList(); renderProductAdmin(); }
+}
+function fmt(n,d=2){ if(n==null||isNaN(n)) return '-'; return Number(n).toLocaleString('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function cls(n){ return n>=0?'up':'down'; }
+function sign(n){ return n>=0?'+':''; }
+
+function migrateExactNav(){
+  var exactNav = {
+    "561": {"2026-07-16":1.0063,"2026-07-17":1.0063,"2026-07-20":1.0064,"2026-07-21":1.0064,"2026-07-22":1.0066,"2026-07-23":1.0067,"2026-07-24":1.0068,"2026-07-27":1.0068,"2026-07-28":1.0068,"2026-07-29":1.0068,"2026-07-30":1.0068,"2026-07-31":1.0069,"2026-08-03":1.007,"2026-08-04":1.007,"2026-08-05":1.0071,"2026-08-06":1.0071,"2026-08-07":1.0072,"2026-08-10":1.0073,"2026-08-11":1.0074,"2026-08-12":1.0074,"2026-08-13":1.0075,"2026-08-14":1.0075,"2026-08-17":1.0076,"2026-08-18":1.0077,"2026-08-19":1.0078,"2026-08-20":1.0078,"2026-08-21":1.0078,"2026-08-24":1.0078,"2026-08-25":1.0079,"2026-08-26":1.0079,"2026-08-27":1.0079,"2026-08-28":1.0078,"2026-08-31":1.0079,"2026-09-01":1.0079,"2026-09-02":1.008,"2026-09-03":1.0081,"2026-09-04":1.0081,"2026-09-07":1.0082,"2026-09-08":1.0083,"2026-09-09":1.0083,"2026-09-10":1.0084,"2026-09-11":1.0084,"2026-09-14":1.0084,"2026-09-15":1.0085,"2026-09-16":1.0085,"2026-09-17":1.0086,"2026-09-18":1.0087,"2026-09-20":1.0088,"2026-09-21":1.0088,"2026-09-22":1.0089,"2026-09-23":1.0089,"2026-09-24":1.009,"2026-09-28":1.0091,"2026-09-29":1.0091,"2026-09-30":1.0092,"2026-10-08":1.0093,"2026-10-09":1.0093,"2026-10-10":1.0094,"2026-10-12":1.0095,"2026-10-13":1.0096,"2026-10-14":1.0097,"2026-10-15":1.0098,"2026-10-16":1.0098,"2026-10-19":1.0099,"2026-10-20":1.01,"2026-10-21":1.0101,"2026-10-22":1.0101,"2026-10-23":1.0101,"2026-10-26":1.0102,"2026-10-27":1.0103},
+    "813": {"2026-07-14":1.032262,"2026-07-15":1.032364,"2026-07-16":1.032365,"2026-07-17":1.032403,"2026-07-20":1.032426,"2026-07-21":1.032463,"2026-07-22":1.032633,"2026-07-23":1.032667,"2026-07-24":1.032749,"2026-07-27":1.032801,"2026-07-28":1.032812,"2026-07-29":1.032706,"2026-07-30":1.032848,"2026-07-31":1.03291,"2026-08-03":1.033025,"2026-08-04":1.033079,"2026-08-05":1.033129,"2026-08-06":1.033197,"2026-08-07":1.033298,"2026-08-10":1.033544,"2026-08-11":1.033548,"2026-08-12":1.033594,"2026-08-13":1.033776,"2026-08-14":1.033836,"2026-08-17":1.033952,"2026-08-18":1.034306,"2026-08-19":1.034218,"2026-08-20":1.034155,"2026-08-21":1.034124,"2026-08-24":1.034363,"2026-08-25":1.034335,"2026-08-26":1.034315,"2026-08-27":1.034279,"2026-08-28":1.034312,"2026-08-31":1.034508,"2026-09-01":1.034781,"2026-09-02":1.034735,"2026-09-03":1.034928,"2026-09-04":1.034989,"2026-09-07":1.035127,"2026-09-08":1.03515,"2026-09-09":1.035208,"2026-09-10":1.035219,"2026-09-11":1.0352,"2026-09-14":1.035281,"2026-09-15":1.035351,"2026-09-16":1.035435,"2026-09-17":1.035493,"2026-09-18":1.035638,"2026-09-21":1.035826,"2026-09-22":1.035993,"2026-09-23":1.03605,"2026-09-24":1.036273,"2026-09-28":1.036268,"2026-09-29":1.036367,"2026-09-30":1.036336,"2026-10-08":1.036565,"2026-10-09":1.036651,"2026-10-12":1.036854,"2026-10-13":1.036911,"2026-10-14":1.036974,"2026-10-15":1.037086,"2026-10-16":1.03714,"2026-10-19":1.037225,"2026-10-20":1.03742,"2026-10-21":1.037477,"2026-10-22":1.037547,"2026-10-23":1.037605,"2026-10-26":1.037746,"2026-10-27":1.037813},
+    "818": {"2026-07-14":1.023944,"2026-07-15":1.024114,"2026-07-16":1.024093,"2026-07-17":1.024031,"2026-07-20":1.023872,"2026-07-21":1.023918,"2026-07-22":1.024328,"2026-07-23":1.024335,"2026-07-24":1.024428,"2026-07-27":1.0244,"2026-07-28":1.024446,"2026-07-29":1.024268,"2026-07-30":1.024444,"2026-07-31":1.02443,"2026-08-03":1.024579,"2026-08-04":1.024578,"2026-08-05":1.024725,"2026-08-06":1.024836,"2026-08-07":1.024997,"2026-08-10":1.02522,"2026-08-11":1.025183,"2026-08-12":1.025202,"2026-08-13":1.025333,"2026-08-14":1.025357,"2026-08-17":1.025467,"2026-08-18":1.025734,"2026-08-19":1.025695,"2026-08-20":1.025506,"2026-08-21":1.025504,"2026-08-24":1.025652,"2026-08-25":1.025625,"2026-08-26":1.025628,"2026-08-27":1.025591,"2026-08-28":1.025637,"2026-08-31":1.025713,"2026-09-01":1.025832,"2026-09-02":1.025814,"2026-09-03":1.025853,"2026-09-04":1.025938,"2026-09-07":1.02606,"2026-09-08":1.026184,"2026-09-09":1.026231,"2026-09-10":1.026228,"2026-09-11":1.026258,"2026-09-14":1.026284,"2026-09-15":1.026323,"2026-09-16":1.026389,"2026-09-17":1.026512,"2026-09-18":1.026599,"2026-09-21":1.026811,"2026-09-22":1.026914,"2026-09-23":1.026918,"2026-09-24":1.026998,"2026-09-28":1.02699,"2026-09-29":1.02698,"2026-09-30":1.026989,"2026-10-08":1.027133,"2026-10-09":1.027136,"2026-10-12":1.027398,"2026-10-13":1.027415,"2026-10-14":1.027477,"2026-10-15":1.027383,"2026-10-16":1.02743,"2026-10-19":1.0274,"2026-10-20":1.027857,"2026-10-21":1.027742,"2026-10-22":1.027623,"2026-10-23":1.027726,"2026-10-26":1.027868,"2026-10-27":1.027877},
+    "5814": {"2026-07-16":1.0052,"2026-07-17":1.0053,"2026-07-20":1.0054,"2026-07-21":1.0054,"2026-07-22":1.0055,"2026-07-23":1.0055,"2026-07-24":1.0056,"2026-07-27":1.0057,"2026-07-28":1.0057,"2026-07-29":1.0057,"2026-07-30":1.0058,"2026-07-31":1.0058,"2026-08-03":1.0059,"2026-08-04":1.006,"2026-08-05":1.006,"2026-08-06":1.006,"2026-08-07":1.0061,"2026-08-10":1.0062,"2026-08-11":1.0062,"2026-08-12":1.0063,"2026-08-13":1.0063,"2026-08-14":1.0063,"2026-08-17":1.0064,"2026-08-18":1.0065,"2026-08-19":1.0065,"2026-08-20":1.0066,"2026-08-21":1.0066,"2026-08-24":1.0067,"2026-08-25":1.0068,"2026-08-26":1.0068,"2026-08-27":1.0068,"2026-08-28":1.0069,"2026-08-31":1.007,"2026-09-01":1.007,"2026-09-02":1.0071,"2026-09-03":1.0071,"2026-09-04":1.0072,"2026-09-07":1.0073,"2026-09-08":1.0073,"2026-09-09":1.0074,"2026-09-10":1.0074,"2026-09-11":1.0074,"2026-09-14":1.0075,"2026-09-15":1.0076,"2026-09-16":1.0076,"2026-09-17":1.0077,"2026-09-18":1.0077,"2026-09-20":1.0078,"2026-09-21":1.0078,"2026-09-22":1.0078,"2026-09-23":1.0081,"2026-09-24":1.0089,"2026-09-28":1.009,"2026-09-29":1.0097,"2026-09-30":1.0098,"2026-10-08":1.0101,"2026-10-09":1.0107,"2026-10-10":1.0108,"2026-10-12":1.0108,"2026-10-13":1.0109,"2026-10-14":1.011,"2026-10-15":1.011,"2026-10-16":1.0111,"2026-10-19":1.0113,"2026-10-20":1.0115,"2026-10-21":1.0116,"2026-10-22":1.0116,"2026-10-23":1.0117,"2026-10-26":1.0118,"2026-10-27":1.0127},
+    "5820": {"2026-07-14":1.035414,"2026-07-15":1.035445,"2026-07-16":1.035514,"2026-07-17":1.035536,"2026-07-20":1.035589,"2026-07-21":1.035594,"2026-07-22":1.035671,"2026-07-23":1.035697,"2026-07-24":1.035817,"2026-07-27":1.035895,"2026-07-28":1.035887,"2026-07-29":1.035945,"2026-07-30":1.035928,"2026-07-31":1.035995,"2026-08-03":1.036103,"2026-08-04":1.036109,"2026-08-05":1.036171,"2026-08-06":1.036191,"2026-08-07":1.036274,"2026-08-10":1.036368,"2026-08-11":1.036385,"2026-08-12":1.036556,"2026-08-13":1.036594,"2026-08-14":1.036615,"2026-08-17":1.036703,"2026-08-18":1.036763,"2026-08-19":1.036753,"2026-08-20":1.036775,"2026-08-21":1.036826,"2026-08-24":1.036909,"2026-08-25":1.036934,"2026-08-26":1.037012,"2026-08-27":1.036999,"2026-08-28":1.037027,"2026-08-31":1.037088,"2026-09-01":1.037144,"2026-09-02":1.037164,"2026-09-03":1.037263,"2026-09-04":1.03732,"2026-09-07":1.037422,"2026-09-08":1.037442,"2026-09-09":1.037489,"2026-09-10":1.037498,"2026-09-11":1.037513,"2026-09-14":1.03761,"2026-09-15":1.037673,"2026-09-16":1.037746,"2026-09-17":1.038754,"2026-09-18":1.038716,"2026-09-21":1.03961,"2026-09-22":1.039937,"2026-09-23":1.040127,"2026-09-24":1.040275,"2026-09-28":1.040388,"2026-09-29":1.040566,"2026-09-30":1.040556,"2026-10-08":1.040789,"2026-10-09":1.040902,"2026-10-12":1.041215,"2026-10-13":1.041428,"2026-10-14":1.041711,"2026-10-15":1.042002,"2026-10-16":1.042149,"2026-10-19":1.042273,"2026-10-20":1.042775,"2026-10-21":1.042993,"2026-10-22":1.043135,"2026-10-23":1.043277,"2026-10-26":1.043475,"2026-10-27":1.043543},
+    "5829": {"2026-07-14":1.0053,"2026-07-15":1.0054,"2026-07-16":1.0054,"2026-07-17":1.0054,"2026-07-20":1.0055,"2026-07-21":1.0055,"2026-07-22":1.0056,"2026-07-23":1.0056,"2026-07-24":1.0056,"2026-07-27":1.0057,"2026-07-28":1.0057,"2026-07-29":1.0058,"2026-07-30":1.0058,"2026-07-31":1.0058,"2026-08-03":1.0059,"2026-08-04":1.0059,"2026-08-05":1.006,"2026-08-06":1.006,"2026-08-07":1.0074,"2026-08-10":1.0074,"2026-08-11":1.0074,"2026-08-12":1.0075,"2026-08-13":1.0075,"2026-08-14":1.0075,"2026-08-17":1.0076,"2026-08-18":1.0076,"2026-08-19":1.0077,"2026-08-20":1.0077,"2026-08-21":1.0077,"2026-08-24":1.0078,"2026-08-25":1.0078,"2026-08-26":1.0079,"2026-08-27":1.0079,"2026-08-28":1.0079,"2026-08-31":1.008,"2026-09-01":1.0081,"2026-09-02":1.0081,"2026-09-03":1.0081,"2026-09-04":1.0081,"2026-09-07":1.0082,"2026-09-08":1.0083,"2026-09-09":1.0083,"2026-09-10":1.0083,"2026-09-11":1.0083,"2026-09-14":1.0084,"2026-09-15":1.0085,"2026-09-16":1.0085,"2026-09-17":1.0085,"2026-09-18":1.0085,"2026-09-21":1.009,"2026-09-22":1.0095,"2026-09-23":1.0096,"2026-09-24":1.0101,"2026-09-28":1.0102,"2026-09-29":1.0113,"2026-09-30":1.0114,"2026-10-08":1.0116,"2026-10-09":1.0124,"2026-10-12":1.0148,"2026-10-13":1.015,"2026-10-14":1.0152,"2026-10-15":1.0153,"2026-10-16":1.0153,"2026-10-19":1.0154,"2026-10-20":1.0154,"2026-10-21":1.0154,"2026-10-22":1.0155,"2026-10-23":1.0155,"2026-10-26":1.0156,"2026-10-27":1.0156},
+    "6604": {"2026-07-14":1.002386,"2026-07-15":1.002391,"2026-07-16":1.002396,"2026-07-17":1.002526,"2026-07-20":1.002597,"2026-07-21":1.002674,"2026-07-22":1.002853,"2026-07-23":1.002995,"2026-07-24":1.003195,"2026-07-27":1.00327,"2026-07-28":1.003205,"2026-07-29":1.003224,"2026-07-30":1.003321,"2026-07-31":1.00336,"2026-08-03":1.003544,"2026-08-04":1.003628,"2026-08-05":1.003631,"2026-08-06":1.0037,"2026-08-07":1.004005,"2026-08-10":1.004504,"2026-08-11":1.004523,"2026-08-12":1.004519,"2026-08-13":1.00492,"2026-08-14":1.004848,"2026-08-17":1.005015,"2026-08-18":1.006436,"2026-08-19":1.006357,"2026-08-20":1.006365,"2026-08-21":1.006368,"2026-08-24":1.006988,"2026-08-25":1.006915,"2026-08-26":1.006924,"2026-08-27":1.007448,"2026-08-28":1.008637,"2026-08-31":1.008791,"2026-09-01":1.00918,"2026-09-02":1.009186,"2026-09-03":1.009612,"2026-09-04":1.009693,"2026-09-07":1.00995,"2026-09-08":1.011313,"2026-09-09":1.011368,"2026-09-10":1.011366,"2026-09-11":1.011356,"2026-09-14":1.011433,"2026-09-15":1.011567,"2026-09-16":1.011722,"2026-09-17":1.01268,"2026-09-18":1.012989,"2026-09-21":1.013288,"2026-09-22":1.013315,"2026-09-23":1.013342,"2026-09-24":1.01337,"2026-09-28":1.013478,"2026-09-29":1.013505,"2026-09-30":1.013532,"2026-10-08":1.014023,"2026-10-09":1.014427,"2026-10-12":1.014861,"2026-10-13":1.014927,"2026-10-14":1.015115,"2026-10-15":1.015205,"2026-10-16":1.01531,"2026-10-19":1.015411,"2026-10-20":1.015807,"2026-10-21":1.015839,"2026-10-22":1.015897,"2026-10-23":1.01597,"2026-10-26":1.016127,"2026-10-27":1.016284},
+    "7107": {"2026-07-16":1.00766,"2026-07-17":1.007688,"2026-07-20":1.007883,"2026-07-21":1.007914,"2026-07-22":1.007915,"2026-07-23":1.007953,"2026-07-24":1.007994,"2026-07-27":1.008015,"2026-07-28":1.008109,"2026-07-29":1.008406,"2026-07-30":1.008485,"2026-07-31":1.008546,"2026-08-03":1.008632,"2026-08-04":1.008666,"2026-08-05":1.008753,"2026-08-06":1.009265,"2026-08-07":1.009358,"2026-08-10":1.009576,"2026-08-11":1.009469,"2026-08-12":1.009506,"2026-08-13":1.009741,"2026-08-14":1.009763,"2026-08-17":1.010032,"2026-08-18":1.010541,"2026-08-19":1.010414,"2026-08-20":1.010418,"2026-08-21":1.010408,"2026-08-24":1.010533,"2026-08-25":1.010532,"2026-08-26":1.010491,"2026-08-27":1.010416,"2026-08-28":1.010941,"2026-08-31":1.011056,"2026-09-01":1.011205,"2026-09-02":1.011172,"2026-09-03":1.011315,"2026-09-04":1.01137,"2026-09-07":1.011493,"2026-09-08":1.0115,"2026-09-09":1.011536,"2026-09-10":1.011564,"2026-09-11":1.011493,"2026-09-14":1.011548,"2026-09-15":1.011645,"2026-09-16":1.011769,"2026-09-17":1.012359,"2026-09-18":1.012505,"2026-09-20":1.012552,"2026-09-21":1.012737,"2026-09-22":1.012901,"2026-09-23":1.012958,"2026-09-24":1.013187,"2026-09-28":1.013217,"2026-09-29":1.01356,"2026-09-30":1.013342,"2026-10-08":1.013397,"2026-10-09":1.013564,"2026-10-10":1.013608,"2026-10-12":1.013944,"2026-10-13":1.014053,"2026-10-14":1.014334,"2026-10-15":1.014381,"2026-10-16":1.014646,"2026-10-19":1.014799,"2026-10-20":1.015189,"2026-10-21":1.015286,"2026-10-22":1.015298,"2026-10-23":1.01537,"2026-10-26":1.015544,"2026-10-27":1.015763},
+    "8042": {"2026-08-13":1,"2026-08-14":1.000071,"2026-08-17":1.000142,"2026-08-18":1.000274,"2026-08-19":1.000305,"2026-08-20":1.000302,"2026-08-21":1.000334,"2026-08-24":1.000409,"2026-08-25":1.00049,"2026-08-26":1.000487,"2026-08-27":1.000469,"2026-08-28":1.000466,"2026-08-31":1.00054,"2026-09-01":1.000722,"2026-09-02":1.000753,"2026-09-03":1.000849,"2026-09-04":1.000981,"2026-09-07":1.001155,"2026-09-08":1.001237,"2026-09-09":1.001269,"2026-09-10":1.001315,"2026-09-11":1.001347,"2026-09-14":1.001522,"2026-09-15":1.001604,"2026-09-16":1.001728,"2026-09-17":1.002432,"2026-09-18":1.002763,"2026-09-21":1.00311,"2026-09-22":1.003422,"2026-09-23":1.003498,"2026-09-24":1.004058,"2026-09-28":1.0039,"2026-09-29":1.004626,"2026-09-30":1.004419,"2026-10-08":1.004651,"2026-10-09":1.004828,"2026-10-12":1.00512,"2026-10-13":1.005214,"2026-10-14":1.005384,"2026-10-15":1.005462,"2026-10-16":1.005549,"2026-10-19":1.005662,"2026-10-20":1.005914,"2026-10-21":1.005941,"2026-10-22":1.006022,"2026-10-23":1.006046,"2026-10-26":1.007787,"2026-10-27":1.008206},
+    "099": {"2026-07-14":1.011316,"2026-07-15":1.011362,"2026-07-16":1.011408,"2026-07-17":1.011454,"2026-07-20":1.011589,"2026-07-21":1.011641,"2026-07-22":1.011697,"2026-07-23":1.011745,"2026-07-24":1.011795,"2026-07-27":1.011933,"2026-07-28":1.011987,"2026-07-29":1.012034,"2026-07-30":1.012083,"2026-07-31":1.012128,"2026-08-03":1.012262,"2026-08-04":1.012319,"2026-08-05":1.01237,"2026-08-06":1.012418,"2026-08-07":1.012473,"2026-08-10":1.012597,"2026-08-11":1.012656,"2026-08-12":1.012704,"2026-08-13":1.012749,"2026-08-14":1.012792,"2026-08-17":1.012916,"2026-08-18":1.012971,"2026-08-19":1.013016,"2026-08-20":1.013059,"2026-08-21":1.013102,"2026-08-24":1.013219,"2026-08-25":1.013273,"2026-08-26":1.013312,"2026-08-27":1.013356,"2026-08-28":1.013401,"2026-08-31":1.013525,"2026-09-01":1.01358,"2026-09-02":1.013624,"2026-09-03":1.013664,"2026-09-04":1.013731,"2026-09-07":1.013854,"2026-09-08":1.013911,"2026-09-09":1.013954,"2026-09-10":1.013995,"2026-09-11":1.014037,"2026-09-14":1.014156,"2026-09-15":1.014211,"2026-09-16":1.014257,"2026-09-17":1.014313,"2026-09-18":1.01436,"2026-09-21":1.014496,"2026-09-22":1.014557,"2026-09-23":1.014603,"2026-09-24":1.014654,"2026-09-28":1.014823,"2026-09-29":1.014889,"2026-09-30":1.014931,"2026-10-08":1.015242,"2026-10-09":1.015322,"2026-10-12":1.01543,"2026-10-13":1.015488,"2026-10-14":1.015526,"2026-10-15":1.015567,"2026-10-16":1.015608,"2026-10-19":1.01572,"2026-10-20":1.015777,"2026-10-21":1.015816,"2026-10-22":1.015863,"2026-10-23":1.015903,"2026-10-26":1.016031,"2026-10-27":1.016085},
+    "043": {"2026-07-14":1.04246,"2026-07-15":1.04252,"2026-07-16":1.04254,"2026-07-17":1.0426,"2026-07-20":1.04276,"2026-07-21":1.0428,"2026-07-22":1.04286,"2026-07-23":1.04292,"2026-07-24":1.04296,"2026-07-27":1.04311,"2026-07-28":1.04315,"2026-07-29":1.04321,"2026-07-30":1.04327,"2026-07-31":1.04331,"2026-08-03":1.04346,"2026-08-04":1.04352,"2026-08-05":1.04354,"2026-08-06":1.0436,"2026-08-07":1.04365,"2026-08-10":1.04378,"2026-08-11":1.0438,"2026-08-12":1.04385,"2026-08-13":1.04387,"2026-08-14":1.04392,"2026-08-17":1.04402,"2026-08-18":1.04407,"2026-08-19":1.04411,"2026-08-20":1.04414,"2026-08-21":1.04418,"2026-08-24":1.04429,"2026-08-25":1.04433,"2026-08-26":1.04436,"2026-08-27":1.04441,"2026-08-28":1.04446,"2026-08-31":1.04458,"2026-09-01":1.04463,"2026-09-02":1.04466,"2026-09-03":1.04471,"2026-09-04":1.04474,"2026-09-07":1.04487,"2026-09-08":1.04492,"2026-09-09":1.04496,"2026-09-10":1.045,"2026-09-11":1.04504,"2026-09-14":1.04517,"2026-09-15":1.04522,"2026-09-16":1.04527,"2026-09-17":1.0453,"2026-09-18":1.04535,"2026-09-21":1.04549,"2026-09-22":1.04552,"2026-09-23":1.04557,"2026-09-24":1.04561,"2026-09-28":1.04579,"2026-09-29":1.04582,"2026-09-30":1.04587,"2026-10-08":1.04618,"2026-10-09":1.04623,"2026-10-12":1.04633,"2026-10-13":1.04637,"2026-10-14":1.04642,"2026-10-15":1.04644,"2026-10-16":1.04649,"2026-10-19":1.04661,"2026-10-20":1.04664,"2026-10-21":1.04668,"2026-10-22":1.04671,"2026-10-23":1.04675,"2026-10-26":1.04688,"2026-10-27":1.04692},
+  };
+  if(!state.dailyNav) state.dailyNav = {};
+  for(var pid in exactNav){
+    if(!state.dailyNav[pid]) state.dailyNav[pid] = {};
+    for(var d in exactNav[pid]){ state.dailyNav[pid][d] = exactNav[pid][d]; }
+  }
+}
+// 一次性迁移：只在第一次运行时注入历史数据，之后不再改动
+function runMigrationsOnce(){
+  if(state.migrationsDone) return;
+  migrate5820();
+  migrateExactNav();
+  state.migrationsDone = true;
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+function renderOverview(){
+  runMigrationsOnce();
+  const holdings = currentHoldings();
+  const total = holdings.reduce((s,h)=>s+h.amount,0);
+  // 今日收益：只算所有产品共同最新净值那天的收益
+  const latestDate = holdings.map(h=>h.latestDate).filter(Boolean).sort().pop()||'';
+  let todayPnl = 0;
+  if(latestDate){
+    holdings.forEach(h=>{
+      if(h.latestDate !== latestDate) return; // 只算最新日期一致的产品
+      todayPnl += h.dayPnl;
+    });
+  }
+  const todayWs = total>0 ? todayPnl/total*10000 : 0;
+
+  document.getElementById('oTotal').textContent = fmt(total);
+  const pendingCount = state.holdings.reduce((s,h)=>s+(h.trades||[]).filter(t=>t.status==='pending').length,0);
+  document.getElementById('oTotalSub').textContent = holdings.length+' 只持仓' + (pendingCount>0 ? ' · 在途买入 '+pendingCount+' 笔' : '');
+  document.getElementById('oTodayPnl').textContent = sign(todayPnl)+fmt(todayPnl);
+  document.getElementById('oTodayPnl').className = 'value '+cls(todayPnl);
+  document.getElementById('oTodayDate').textContent = latestDate;
+  document.getElementById('oTodayWs').textContent = sign(todayWs)+fmt(todayWs,2);
+
+  const daily = dailyTotalPnl();
+  const now = new Date();
+  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const lym = now.getMonth()===0 ? (now.getFullYear()-1)+'-12' : now.getFullYear()+'-'+String(now.getMonth()).padStart(2,'0');
+
+  let monthPnl=0, lastMonthPnl=0;
+  Object.entries(daily).forEach(([d,v])=>{
+    if(d.startsWith(ym)) monthPnl+=v;
+    if(d.startsWith(lym)) lastMonthPnl+=v;
+  });
+  document.getElementById('oMonthPnl').textContent = sign(monthPnl)+fmt(monthPnl);
+  document.getElementById('oLastMonthPnl').textContent = sign(lastMonthPnl)+fmt(lastMonthPnl);
+
+  // 年化口径和 oldox 一致：复利公式，分母=月初市值+资金加权流入
+  const todayStr = now.toISOString().slice(0,10);
+  function marketValueAt(h, date){
+    const pos = positionAt(h, date);
+    if(pos.shares<=0.01) return 0;
+    const nm = state.dailyNav[h.productId]||{};
+    const ds = Object.keys(nm).filter(d=>d<=date).sort();
+    if(!ds.length) return 0;
+    return pos.shares * nm[ds[ds.length-1]];
+  }
+  function weightedCost(ym){
+    const y = parseInt(ym.slice(0,4)), m = parseInt(ym.slice(5,7));
+    const monthStart = ym+'-01';
+    const isCurrent = (ym===todayStr.slice(0,7));
+    const monthEnd = isCurrent ? todayStr : fmtLocalDate(new Date(y, m, 0));
+    // v0 = 上月最后一天的市值（和 oldox tp(Rn,0,prevMonthEnd) 一致）
+    const prevMonthEnd = fmtLocalDate(new Date(y, m-1, 0));
+    const totalDays = Math.max(1, Math.round((new Date(monthEnd)-new Date(monthStart))/86400000)+1);
+    let baseMv = 0;
+    state.holdings.forEach(h=>{ baseMv += marketValueAt(h, prevMonthEnd); });
+    let weighted = 0;
+    state.holdings.forEach(h=>{
+      h.trades.forEach(t=>{
+        if(t.status!=='confirmed') return;
+        const td = t.date||t.confirmDate;
+        if(!td || td < monthStart || td > monthEnd) return;
+        const amt = Number(t.amount)||0;
+        if(!isFinite(amt) || amt<=0) return;
+        const sign = t.type==='buy' ? amt : -amt;
+        const dayIdx = Math.round((new Date(td)-new Date(monthStart))/86400000);
+        const weight = (totalDays - dayIdx) / totalDays;
+        weighted += sign * weight;
+      });
+    });
+    return {cost: baseMv + weighted, days: totalDays};
+  }
+  function monthAnnualRate(ym){
+    const dates = Object.keys(daily).filter(d=>d.startsWith(ym)).sort();
+    if(!dates.length) return 0;
+    const pnl = dates.reduce((s,d)=>s+daily[d],0);
+    const {cost, days} = weightedCost(ym);
+    if(cost<=0) return 0;
+    return pnl/cost/days*365*100;
+  }
+  const monthAnnual = monthAnnualRate(ym);
+  document.getElementById('oMonthAnnual').textContent = sign(monthAnnual)+fmt(monthAnnual,2)+'%';
+  const lastMonthAnnual = monthAnnualRate(lym);
+  document.getElementById('oLastMonthAnnual').textContent = sign(lastMonthAnnual)+fmt(lastMonthAnnual,2)+'%';
+
+  renderCalendar(daily);
+  drawPnlChart(daily);
+}
+
+function renderCalendar(daily){
+  document.getElementById('calTitle').textContent = calYear+'年'+(calMonth+1)+'月';
+  const ym = calYear+'-'+String(calMonth+1).padStart(2,'0');
+  const firstDay = new Date(calYear,calMonth,1).getDay();
+  const dim = new Date(calYear,calMonth+1,0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+  let html = ['日','一','二','三','四','五','六'].map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<firstDay;i++) html+='<div class="day empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const ds = ym+'-'+String(d).padStart(2,'0');
+    const pnl = daily[ds];
+    const isToday = ds===todayStr;
+    let cls = '';
+    if(pnl!=null) cls = pnl>=0?'pos':'neg';
+    if(isToday) cls='today';
+    html += `<div class="day ${cls}" onclick="showDayDetail('${ds}')"><span class="d-num">${d}</span>${pnl!=null?`<span class="d-pnl">${sign(pnl)}${fmt(pnl)}</span>`:''}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+function showDayDetail(date){
+  const el = document.getElementById('dayDetail');
+  if(!el) return;
+  let html = '<h3 style="margin:15px 0 8px;font-size:14px">'+date+' 当日收益明细</h3>';
+  let total = 0;
+  state.holdings.forEach(h=>{
+    const pos = positionAt(h, date);
+    if(pos.shares<0.01) return;
+    const navs = state.dailyNav[h.productId]||{};
+    const dates = Object.keys(navs).sort();
+    const idx = dates.indexOf(date);
+    if(idx<0) return;
+    const nav = navs[date];
+    const prevNav = idx>0 ? navs[dates[idx-1]] : nav;
+    const dayPnl = pos.shares * (nav - prevNav);
+    total += dayPnl;
+    html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px">'
+      +'<span>'+h.productName+'</span>'
+      +'<span class="'+(dayPnl>=0?'up':'down')+'">'+sign(dayPnl)+fmt(dayPnl)+' 元</span></div>';
+  });
+  html += '<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:600;margin-top:4px">'
+    +'<span>合计</span><span class="'+(total>=0?'up':'down')+'">'+sign(total)+fmt(total)+' 元</span></div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+function shiftMonth(d){
+  calMonth+=d;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  renderCalendar(dailyTotalPnl());
+}
+
+function setPnlView(v){
+  pnlView = v;
+  document.getElementById('btnViewMonth').className = 'btn sm' + (v==='month'?'':' ghost');
+  document.getElementById('btnViewYear').className = 'btn sm' + (v==='year'?'':' ghost');
+  drawPnlChart(dailyTotalPnl());
+}
+
+function totalAmountOn(date){
+  let total = 0;
+  state.holdings.forEach(h=>{
+    const pos = positionAt(h, date);
+    if(pos.shares<=0) return;
+    // 用持仓成本做分母（不依赖净值数据，避免历史日期净值缺失）
+    total += pos.cost;
+  });
+  return total;
+}
+
+function drawPnlChart(daily){
+  // 按月或按年汇总
+  const buckets = {};
+  Object.entries(daily).forEach(([d,v])=>{
+    const key = pnlView==='month' ? d.slice(0,7) : d.slice(0,4);
+    buckets[key] = (buckets[key]||0) + v;
+  });
+  let keys = Object.keys(buckets).sort();
+  if(pnlView==='month') keys = keys.slice(-12);
+  const values = keys.map(k=>Math.round(buckets[k]*100)/100);
+
+  // 计算每个 bucket 的年化（和概览同口径：复利+加权市值）
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  function mvAt(h, date){
+    const pos = positionAt(h, date);
+    if(pos.shares<=0.01) return 0;
+    const nm = state.dailyNav[h.productId]||{};
+    const ds = Object.keys(nm).filter(d=>d<=date).sort();
+    if(!ds.length) return 0;
+    return pos.shares * nm[ds[ds.length-1]];
+  }
+  function weightedCostGlobal(ym){
+    const y = parseInt(ym.slice(0,4)), m = parseInt(ym.slice(5,7));
+    const monthStart = ym+'-01';
+    const isCurrent = (ym===todayStr.slice(0,7));
+    const monthEnd = isCurrent ? todayStr : fmtLocalDate(new Date(y, m, 0));
+    const prevMonthEnd = fmtLocalDate(new Date(y, m-1, 0));
+    const totalDays = Math.max(1, Math.round((new Date(monthEnd)-new Date(monthStart))/86400000)+1);
+    let baseMv = 0;
+    state.holdings.forEach(h=>{ baseMv += mvAt(h, prevMonthEnd); });
+    let weighted = 0;
+    state.holdings.forEach(h=>{
+      h.trades.forEach(t=>{
+        if(t.status!=='confirmed') return;
+        const td = t.date||t.confirmDate;
+        if(!td || td < monthStart || td > monthEnd) return;
+        const amt = Number(t.amount)||0;
+        if(!isFinite(amt) || amt<=0) return;
+        const sign = t.type==='buy' ? amt : -amt;
+        const dayIdx = Math.round((new Date(td)-new Date(monthStart))/86400000);
+        const weight = (totalDays - dayIdx) / totalDays;
+        weighted += sign * weight;
+      });
+    });
+    return {cost: baseMv + weighted, days: totalDays};
+  }
+  const annuals = keys.map((k,i)=>{
+    const dates = Object.keys(daily).filter(d=>d.startsWith(k)).sort();
+    if(!dates.length) return null;
+    const v = values[i];
+    if(pnlView==='month'){
+      const {cost, days} = weightedCostGlobal(k);
+      if(cost<=0) return null;
+      return v/cost/days*365*100;
+    } else {
+      const y = k;
+      // 年视图：从1月1日到今天
+      const today = todayStr;
+      const yearStart = y+'-01-01';
+      const days = Math.max(1, Math.round((new Date(today)-new Date(yearStart))/86400000)+1);
+      // v0 = 去年最后一天
+      const prevYearEnd = (y-1)+'-12-31';
+      let baseMv = 0;
+      state.holdings.forEach(h=>{ baseMv += mvAt(h, prevYearEnd); });
+      let weighted = 0;
+      state.holdings.forEach(h=>{
+        h.trades.forEach(t=>{
+          if(t.status!=='confirmed') return;
+          const td = t.date||t.confirmDate;
+          if(!td || td < yearStart || td > today) return;
+          const amt = Number(t.amount)||0;
+          if(!isFinite(amt)||amt<=0) return;
+          const s = t.type==='buy' ? amt : -amt;
+          const dayIdx = Math.round((new Date(td)-new Date(yearStart))/86400000);
+          weighted += s * (days-dayIdx)/days;
+        });
+      });
+      const cost = baseMv + weighted;
+      if(cost<=0) return null;
+      return v/cost/days*365*100;
+    }
+  });
+
+  const total = values.reduce((s,v)=>s+v,0);
+  document.getElementById('pnlSummary').textContent =
+    (pnlView==='month' ? '近 '+keys.length+' 个月累计收益 ' : '累计收益 ')+sign(total)+fmt(total)+' 元';
+
+  const canvas = document.getElementById('pnlChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth, H = 260;
+  const dpr = window.devicePixelRatio||1;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  if(!keys.length) return;
+
+  const max = Math.max(...values,0), min = Math.min(...values,0);
+  const padL=44, padR=10, padT=20, padB=56;
+  const cw = W-padL-padR, ch = H-padT-padB;
+  const baseY = padT + (0-min)/(max-min||1)*ch;
+  ctx.strokeStyle='#f0f0f0'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y = padT + ch*i/4;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+  }
+  const bw = Math.min(44, cw/keys.length*0.55);
+  values.forEach((v,i)=>{
+    const slotCenter = padL + i*cw/keys.length + cw/keys.length/2;
+    const x = slotCenter - bw/2;
+    const y = padT + (v-min)/(max-min||1)*ch;
+    ctx.fillStyle = v>=0 ? '#d4380d' : '#389e0d';
+    ctx.fillRect(x, Math.min(y,baseY), bw, Math.abs(baseY-y));
+  });
+  // x 标签：月份 + 金额 + 年化
+  ctx.textAlign='center';
+  keys.forEach((k,i)=>{
+    const label = pnlView==='month' ? k.slice(2) : k;
+    const cx = padL + i*cw/keys.length + cw/keys.length/2;
+    // 月份
+    ctx.fillStyle='#646a73'; ctx.font='bold 11px sans-serif';
+    ctx.fillText(label, cx, H-42);
+    // 金额
+    ctx.fillStyle = values[i]>=0 ? '#d4380d' : '#389e0d'; ctx.font='11px sans-serif';
+    ctx.fillText(sign(values[i])+fmt(values[i],0), cx, H-26);
+    // 年化
+    if(annuals[i]!=null){
+      ctx.fillStyle='#999'; ctx.font='10px sans-serif';
+      ctx.fillText(sign(annuals[i])+fmt(annuals[i],2)+'%', cx, H-10);
+    }
+  });
+}
+
+function renderHoldings(){
+  const holdings = currentHoldings();
+  // 按机构分组
+  const groups = {};
+  holdings.forEach(h=>{ (groups[h.agencyName||'其他']=groups[h.agencyName||'其他']||[]).push(h); });
+
+  let html = '<h2>当前持仓</h2>';
+  Object.entries(groups).forEach(([agency, items])=>{
+    const gPnl = items.reduce((s,h)=>s+h.dayPnl,0);
+    const gAmt = items.reduce((s,h)=>s+h.amount,0);
+    const gWs = gAmt>0 ? gPnl/gAmt*10000 : 0;
+    html += `<div class="group-header">
+      <div class="g-name">${agency}<span class="badge">${items.length}</span><span style="font-size:12px;color:var(--text2);font-weight:400;margin-left:8px">持仓 ${fmt(gAmt)}</span></div>
+      <div class="g-pnl">${sign(gPnl)}${fmt(gPnl)}<span class="wanshou">万收 ${sign(gWs)}${fmt(gWs,2)}</span></div>
+    </div>`;
+    items.forEach(h=>{
+      html += `<div class="product" onclick="toggleDetail('${h.id}')">
+        <div class="p-top">
+          <div><div class="p-name">${h.productName}</div><div class="p-code">${h.salesCode||''}</div></div>
+          <div class="p-day"><div class="p-date">${(h.latestDate||'').slice(5)} <span style="color:var(--text2);font-weight:400">(${sign(h.wanshou)}${fmt(h.wanshou,2)})</span></div></div>
+        </div>
+        <div class="p-stats">
+          <div><div class="s-label">持有金额</div><div class="s-val bold">${fmt(h.amount)}</div></div>
+          <div><div class="s-label">当日盈亏</div><div class="s-val ${cls(h.dayPnl)}">${sign(h.dayPnl)}${fmt(h.dayPnl)}</div></div>
+          <div><div class="s-label">持仓盈亏</div><div class="s-val ${cls(h.holdPnl)}">${sign(h.holdPnl)}${fmt(h.holdPnl)}</div></div>
+          <div><div class="s-label">持有年化</div><div class="s-val ${cls(h.annual)}">${sign(h.annual)}${fmt(h.annual,2)}%</div></div>
+        </div>
+        <div class="p-detail hidden" id="detail_${h.id}">
+          <div style="margin-bottom:6px;color:var(--text2)">最新净值 ${h.latestNav?fmt(h.latestNav,6):'-'} · 持有 ${h.holdDays} 天 · 份额 ${fmt(h.shares,2)} · 成本 ${fmt(h.cost)}</div>
+          <div style="font-weight:600;margin-bottom:4px">交易记录</div>
+          <table class="data"><thead><tr><th>日期</th><th>类型</th><th>金额</th><th>净值</th><th>份额</th></tr></thead><tbody>
+          ${h.trades.filter(t=>t.status==='confirmed').sort((a,b)=>b.date.localeCompare(a.date)).map(t=>
+            `<tr><td>${t.date}</td><td>${t.type==='buy'?'买入':'赎回'}</td><td>${fmt(t.amount)}</td><td>${t.nav?fmt(t.nav,6):'-'}</td><td>${t.shares?fmt(t.shares,2):'-'}</td></tr>`
+          ).join('')}
+          </tbody></table>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('holdingPanel').innerHTML = html;
+
+  // 已清仓
+  const today = new Date().toISOString().slice(0,10);
+  const closed = state.holdings.filter(h=>positionAt(h,today).shares<0.01);
+  let ch = '';
+  closed.forEach(h=>{
+    const realized = h.trades.filter(t=>t.status==='confirmed').reduce((s,t)=>s+(t.type==='redeem'?t.amount:-t.amount),0);
+    ch += `<div class="product"><div class="p-top">
+      <div><div class="p-name">${h.productName}</div><div class="p-code">${h.agencyName}</div></div>
+      <div class="p-day"><div class="s-val ${cls(realized)}">${sign(realized)}${fmt(realized)}</div></div>
+    </div></div>`;
+  });
+  document.getElementById('closedList').innerHTML = ch || '<div class="empty-tip">无</div>';
+}
+function toggleDetail(id){
+  document.getElementById('detail_'+id).classList.toggle('hidden');
+}
+function openHoldingForm(){
+  const name = prompt('产品名称：'); if(!name) return;
+  const agency = prompt('代销机构：')||'';
+  const pid = 'p'+Date.now();
+  state.holdings.push({id:'holding_'+pid,productId:pid,productName:name,agencyName:agency,salesCode:'',managerOrg:'',category:'',confirmTime:'T+1',note:'',trades:[]});
+  state.dailyNav[pid] = {}; save(); renderHoldings(); toast('已添加');
+}
+
+function renderTrades(){
+  let opts = state.holdings.map(h=>`<option value="${h.id}">${h.productName}</option>`).join('');
+  opts += `<option value="__new">➕ 新增产品…</option>`;
+  document.getElementById('tHolding').innerHTML = opts;
+  onProductChange();
+  const rows = [];
+  state.holdings.forEach(h=>h.trades.forEach(t=>rows.push({...t, hid:h.id})));
+  rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.querySelector('#tradeTable tbody').innerHTML = rows.map(t=>
+    `<tr><td>${t.date||'-'}</td><td>${state.holdings.find(h=>h.id===t.hid).productName}</td><td>${t.type==='buy'?'<span class="up">买入</span>':'<span class="down">卖出</span>'}</td><td>${fmt(t.amount)}</td><td>${t.nav?fmt(t.nav,6):'-'}</td><td>${t.shares?fmt(t.shares,2):'-'}</td><td><button class="btn sm ghost" onclick="editTrade('${t.hid}','${t.tradeId}')">修改</button> <button class="btn sm ghost" onclick="deleteTrade('${t.hid}','${t.tradeId}')">删除</button></td></tr>`
+  ).join('');
+}
+let editingTrade = null;
+function onProductChange(){
+  const v = document.getElementById('tHolding').value;
+  document.getElementById('newProductFields').classList.toggle('hidden', v!=='__new');
+}
+function editTrade(hid, tid){
+  const h = state.holdings.find(x=>x.id===hid);
+  const t = h.trades.find(x=>x.tradeId===tid);
+  if(!t) return;
+  editingTrade = {hid, tid};
+  document.getElementById('tHolding').value = hid;
+  onProductChange();
+  document.getElementById('tType').value = t.type;
+  document.getElementById('tDate').value = t.date||'';
+  document.getElementById('tAmount').value = t.amount||'';
+  document.getElementById('tNav').value = t.nav||'';
+  document.getElementById('tShares').value = t.shares||'';
+  document.getElementById('submitTradeBtn').textContent = '更新交易';
+  toast('正在修改这笔交易');
+}
+function deleteTrade(hid, tid){
+  if(!confirm('确定删除这笔交易？')) return;
+  const h = state.holdings.find(x=>x.id===hid);
+  h.trades = h.trades.filter(t=>t.tradeId!==tid);
+  save(); renderTrades(); renderOverview(); toast('已删除');
+}
+function autoCalcShares(){
+  var amt = parseFloat(document.getElementById('tAmount').value);
+  var nav = parseFloat(document.getElementById('tNav').value);
+  var shares = parseFloat(document.getElementById('tShares').value);
+  var type = document.getElementById('tType').value;
+  if(type!=='buy') return;
+  if(amt>0 && nav>0 && !isFinite(shares)){
+    document.getElementById('tShares').value = (amt/nav).toFixed(4);
+  }
+  if(amt>0 && shares>0 && !isFinite(nav)){
+    document.getElementById('tNav').value = (amt/shares).toFixed(6);
+  }
+}
+function addTrade(){
+  const type = document.getElementById('tType').value;
+  const date = document.getElementById('tDate').value;
+  const amount = parseFloat(document.getElementById('tAmount').value)||0;
+  const nav = parseFloat(document.getElementById('tNav').value);
+  let shares = parseFloat(document.getElementById('tShares').value);
+  if(!date||!amount){toast('填日期和金额');return;}
+  const isUpdate = !!editingTrade;
+  let h;
+  const sel = document.getElementById('tHolding').value;
+  if(isUpdate && sel!=='__new'){
+    h = state.holdings.find(x=>x.id===sel);
+    const t = h.trades.find(x=>x.tradeId===editingTrade.tid);
+    if(t){ t.type=type; t.date=date; t.amount=amount; t.nav=nav||null; t.shares=shares||null; t.confirmDate=date; }
+  } else if(sel==='__new'){
+    const name = document.getElementById('tNewName').value.trim();
+    const agency = document.getElementById('tAgency').value.trim();
+    const code = document.getElementById('tSalesCode').value.trim();
+    if(!name){toast('填新产品名');return;}
+    if(type==='redeem'){toast('卖出需选已有产品');return;}
+    h = {id:'h'+Date.now(), productId:String(Date.now()), productName:name, agencyName:agency, salesCode:code, trades:[]};
+    state.holdings.push(h);
+    if(!state.dailyNav[h.productId]) state.dailyNav[h.productId]={};
+  } else {
+    h = state.holdings.find(x=>x.id===sel);
+  }
+  if(!isUpdate){
+    if(type==='buy'&&!shares){ if(nav>0) shares=amount/nav; else {toast('买入需净值或份额');return;} }
+    if(type==='redeem'&&!shares){toast('卖出需份额');return;}
+    h.trades.push({tradeId:'t'+Date.now(),type,date,amount,nav:nav||null,shares:shares||null,status:'confirmed',confirmDate:date});
+  }
+  // 买入净值写入 dailyNav
+  if(type==='buy' && nav>0){
+    if(!state.dailyNav[h.productId]) state.dailyNav[h.productId]={};
+    state.dailyNav[h.productId][date] = nav;
+  }
+  save(); renderTrades(); renderOverview(); toast(isUpdate?'已更新并同步':'已保存并同步');
+  editingTrade = null;
+  document.getElementById('submitTradeBtn').textContent = '保存交易';
+  ['tAmount','tNav','tShares','tNewName','tSalesCode'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  onProductChange();
+}
+
+// 快捷录入
+function renderQuick(){
+  const d = new Date();
+  do { d.setDate(d.getDate()-1); } while(d.getDay()===0 || d.getDay()===6);
+  document.getElementById('qDate').value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const today = new Date().toISOString().slice(0,10);
+  const holdings = state.holdings.filter(h=>positionAt(h,today).shares>0.01);
+  let html = '';
+  holdings.forEach(h=>{
+    const ln = latestNav(h.productId);
+    const pos = positionAt(h, today);
+    html += `<div class="quick-row">
+      <div class="quick-label">${h.productName}<br><span style="font-size:11px;color:var(--text2)">${h.regCode||'-'} · ${h.salesCode||'-'} · ${fmt(pos.shares,2)}份</span></div>
+      <input type="number" step="0.000001" placeholder="净值（最新 ${ln?fmt(ln.nav,6):'-'}）" data-pid="${h.productId}" class="qnav-input">
+      <input type="number" step="0.01" placeholder="当日收益" data-pid="${h.productId}" class="qpnl-input">
+      <input type="number" step="0.01" placeholder="持仓市值" data-pid="${h.productId}" class="qmv-input">
+    </div>`;
+  });
+  document.getElementById('quickRows').innerHTML = html;
+}
+function saveQuick(){
+  const date = document.getElementById('qDate').value;
+  if(!date){toast('选日期');return;}
+  let n=0;
+  document.querySelectorAll('.quick-row').forEach(row=>{
+    const navInp = row.querySelector('.qnav-input');
+    const pnlInp = row.querySelector('.qpnl-input');
+    const mvInp = row.querySelector('.qmv-input');
+    const pid = navInp.dataset.pid;
+    const h = state.holdings.find(x=>x.productId===pid);
+    if(!h) return;
+    const pos = positionAt(h, date);
+    const shares = pos.shares;
+    if(shares<=0.01) return;
+    let nav = parseFloat(navInp.value);
+    if(!isFinite(nav)||nav<=0){
+      // 用当日收益反算
+      const pnl = parseFloat(pnlInp.value);
+      if(isFinite(pnl) && pnl!==0){
+        const ln = latestNav(pid);
+        const prevNav = ln ? ln.nav : 0;
+        if(prevNav>0){
+          nav = prevNav + pnl/shares;
+        }
+      }
+    }
+    if(!isFinite(nav)||nav<=0){
+      // 用持仓市值反算
+      const mv = parseFloat(mvInp.value);
+      if(isFinite(mv)&&mv>0){
+        nav = mv/shares;
+      }
+    }
+    if(nav>0){
+      if(!state.dailyNav[pid]) state.dailyNav[pid]={};
+      state.dailyNav[pid][date] = Math.round(nav*1000000)/1000000; n++;
+    }
+  });
+  save(); toast('已保存 '+n+' 条净值并同步');
+  document.querySelectorAll('.qnav-input').forEach(i=>i.value='');
+}
+function importNav(){
+  const text = document.getElementById('navInput').value.trim();
+  if(!text) return;
+  let ok=0;
+  text.split('\n').forEach(line=>{
+    line=line.trim(); if(!line) return;
+    const p = line.split(/[,，\t]/); if(p.length<3) return;
+    const pid=p[0].trim(), date=p[1].trim(), nav=parseFloat(p[2]);
+    if(!state.dailyNav[pid]) state.dailyNav[pid]={};
+    state.dailyNav[pid][date]=nav; ok++;
+  });
+  save(); toast('导入 '+ok+' 条'); document.getElementById('navInput').value='';
+}
+function queryNav(){
+  const pid = document.getElementById('navDelPid').value;
+  const from = document.getElementById('navFrom').value || '0000';
+  const to = document.getElementById('navTo').value || '9999';
+  if(!pid){toast('选产品');return;}
+  const nm = state.dailyNav[pid]||{};
+  const dates = Object.keys(nm).filter(d=>d>=from && d<=to).sort();
+  if(!dates.length){document.getElementById('navResult').innerHTML='<div style="color:var(--text2)">无数据</div>';return;}
+  let html = '<table class="data"><thead><tr><th>日期</th><th>净值</th><th>操作</th></tr></thead><tbody>';
+  dates.forEach(d=>{
+    html += '<tr><td>'+d+'</td><td><input type="number" step="0.000001" id="navEdit_'+d+'" value="'+nm[d]+'" style="width:110px"></td>'
+      +'<td><button class="btn sm ghost" onclick="saveNavEdit(\''+pid+'\',\''+d+'\')">保存</button> '
+      +'<button class="btn sm ghost" onclick="delNavOne(\''+pid+'\',\''+d+'\')">删除</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('navResult').innerHTML = html;
+}
+function saveNavEdit(pid, date){
+  const v = parseFloat(document.getElementById('navEdit_'+date).value);
+  if(!v||v<=0){toast('净值无效');return;}
+  state.dailyNav[pid][date] = v;
+  save(); toast('已保存'); queryNav();
+}
+function delNavOne(pid, date){
+  if(!confirm('删除 '+date+' 的净值？')) return;
+  delete state.dailyNav[pid][date];
+  save();
+  fetch(SUPABASE_URL + "/rest/v1/daily_nav?product_id=eq." + encodeURIComponent(pid) + "&nav_date=eq." + encodeURIComponent(date), {
+    method: "DELETE", headers: SB_AUTH_HEADERS()
+  });
+  toast('已删除并同步'); queryNav(); renderOverview();
+}
+function deleteNav(){
+  const pid = document.getElementById('navDelPid').value;
+  const date = document.getElementById('navDelDate').value;
+  if(!pid || !date){toast('选产品和日期');return;}
+  if(!confirm('删除 '+date+' 的净值？')) return;
+  if(state.dailyNav[pid]) delete state.dailyNav[pid][date];
+  save();
+  fetch(SUPABASE_URL + "/rest/v1/daily_nav?product_id=eq." + encodeURIComponent(pid) + "&nav_date=eq." + encodeURIComponent(date), {
+    method: "DELETE", headers: SB_AUTH_HEADERS()
+  });
+  toast('已删除并同步'); renderOverview();
+}
+function initNavDel(){
+  const sel = document.getElementById('navDelPid');
+  sel.innerHTML = state.holdings.map(h=>'<option value="'+h.productId+'">'+h.productName+'</option>').join('');
+}
+function renderRegCodeList(){
+  let html = '<table class="data"><thead><tr><th>产品名称</th><th>份额代码</th><th>登记编码</th><th></th></tr></thead><tbody>';
+  state.holdings.forEach(h=>{
+    html += '<tr><td>'+h.productName+'</td><td>'+(h.salesCode||'-')+'</td>'
+      +'<td><input type="text" id="regCode_'+h.productId+'" value="'+(h.regCode||'')+'" placeholder="Z700..." style="width:140px;font-size:13px"></td>'
+      +'<td><button class="btn sm ghost" onclick="saveRegCode(\''+h.productId+'\')">保存</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('regCodeList').innerHTML = html;
+}
+function saveRegCode(pid){
+  const v = document.getElementById('regCode_'+pid).value.trim();
+  const h = state.holdings.find(x=>x.productId===pid);
+  if(h){ h.regCode = v; save(); toast('已保存并同步'); }
+}
+function deleteProduct(id){
+  const h = state.holdings.find(x=>x.id===id);
+  if(!h) return;
+  const today = new Date().toISOString().slice(0,10);
+  const pos = positionAt(h, today);
+  const holding = pos.shares > 0.01;
+  const msg = holding
+    ? '「'+h.productName+'」仍有持仓 '+fmt(pos.shares,2)+' 份，删除后该产品及其全部净值和交易记录都会消失，确定？'
+    : '删除产品「'+h.productName+'」及其全部净值记录？';
+  if(!confirm(msg)) return;
+  const pid = h.productId;
+  state.holdings = state.holdings.filter(x=>x.id!==id);
+  if(state.dailyNav[pid]) delete state.dailyNav[pid];
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if(sbReady){
+    fetch(SUPABASE_URL + "/rest/v1/holdings?id=eq." + encodeURIComponent(id), {
+      method: "DELETE", headers: SB_AUTH_HEADERS()
+    }).catch(()=>toast('云端删除失败，请重试'));
+    fetch(SUPABASE_URL + "/rest/v1/daily_nav?product_id=eq." + encodeURIComponent(pid), {
+      method: "DELETE", headers: SB_AUTH_HEADERS()
+    }).catch(()=>toast('云端净值删除失败，请重试'));
+  }
+  renderAll(); renderProductAdmin(); toast('已删除并同步云端');
+}
+function renderProductAdmin(){
+  const today = new Date().toISOString().slice(0,10);
+  let html = '<table class="data" style="table-layout:fixed">'
+    +'<colgroup><col style="width:40%"><col style="width:16%"><col style="width:14%"><col style="width:12%"><col style="width:18%"></colgroup>'
+    +'<thead><tr><th>产品</th><th>机构</th><th>份额</th><th>交易</th><th></th></tr></thead><tbody>';
+  state.holdings.forEach(h=>{
+    const pos = positionAt(h, today);
+    const tc = (h.trades||[]).length;
+    html += '<tr><td>'+h.productName
+      +'<div style="font-size:11px;color:var(--text2)">'+(h.salesCode||'-')+' · '+h.id+'</div></td>'
+      +'<td>'+(h.agencyName||'-')+'</td>'
+      +'<td>'+fmt(pos.shares,2)+'</td>'
+      +'<td>'+tc+'</td>'
+      +'<td><button class="btn sm ghost" onclick="deleteProduct(\''+h.id+'\')">删除</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('productAdminList').innerHTML = state.holdings.length ? html : '<div class="empty-tip">无</div>';
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'asset-ledger-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+document.getElementById('importFile').addEventListener('change', function(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev=>{ try{ state=JSON.parse(ev.target.result); save(); renderOverview(); toast('恢复成功'); }catch(err){ toast('失败: '+err.message); } };
+  r.readAsText(f);
+});
+
+// init
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('zh-CN');
+document.getElementById('tDate').value = new Date().toISOString().slice(0,10);
+function renderAll(){ renderOverview(); renderHoldings(); renderTrades(); renderQuick(); initNavDel(); renderRegCodeList(); renderProductAdmin(); }
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+renderOverview();
+</script>
+</body>
+</html>
